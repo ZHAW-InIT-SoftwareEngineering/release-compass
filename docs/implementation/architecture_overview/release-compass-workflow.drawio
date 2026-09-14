@@ -4,6 +4,9 @@
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
+        <mxCell id="GFf_hGTCJ-hVXIevb1b8-27" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="" vertex="1">
+          <mxGeometry height="890" width="520" x="290" y="190" as="geometry" />
+        </mxCell>
         <mxCell id="GFf_hGTCJ-hVXIevb1b8-22" edge="1" parent="1" source="U70XmFBk3MbX6QNN5NTw-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="GFf_hGTCJ-hVXIevb1b8-1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
@@ -85,6 +88,9 @@
         </mxCell>
         <mxCell id="GFf_hGTCJ-hVXIevb1b8-24" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;span style=&quot;font-size: 8px;&quot;&gt;Allows the system to answer the must have NFR (QV2 =&amp;gt; BH3) defined in the paper.&lt;/span&gt;" vertex="1">
           <mxGeometry height="50" width="110" x="605" y="885" as="geometry" />
+        </mxCell>
+        <mxCell id="GFf_hGTCJ-hVXIevb1b8-28" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Workflow&lt;/font&gt;" vertex="1">
+          <mxGeometry height="30" width="90" x="290" y="190" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
