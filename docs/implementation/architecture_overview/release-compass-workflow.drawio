@@ -1,0 +1,25 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Page-1" id="zrChHwomJYHwOwhWYssl">
+    <mxGraphModel dx="1212" dy="1142" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="U70XmFBk3MbX6QNN5NTw-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="" vertex="1">
+          <mxGeometry height="530" width="1010" x="170" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="U70XmFBk3MbX6QNN5NTw-2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="Conversational Agent" vertex="1">
+          <mxGeometry height="60" width="120" x="485" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="U70XmFBk3MbX6QNN5NTw-3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="Performance Gate" vertex="1">
+          <mxGeometry height="60" width="120" x="485" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="U70XmFBk3MbX6QNN5NTw-4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="Other Gate(s)" vertex="1">
+          <mxGeometry height="60" width="120" x="750" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="U70XmFBk3MbX6QNN5NTw-5" parent="1" style="shape=document;whiteSpace=wrap;html=1;boundedLbl=1;" value="Generic Gate Contract:&lt;div&gt;get_summary()&lt;/div&gt;&lt;div&gt;get_status()&lt;/div&gt;&lt;div&gt;get_failed_criteria()&lt;/div&gt;" vertex="1">
+          <mxGeometry height="120" width="140" x="1020" y="490" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
