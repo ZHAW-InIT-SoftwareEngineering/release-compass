@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net">
   <diagram name="Page-1" id="cOKAhENU3ye7d_viBbBi">
-    <mxGraphModel dx="1056" dy="1023" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="603" dy="585" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -28,7 +28,7 @@
         <mxCell id="bcNScEclYrCtCeR47sBN-10" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="Previous Reports" vertex="1">
           <mxGeometry height="60" width="120" x="670" y="550" as="geometry" />
         </mxCell>
-        <mxCell id="bcNScEclYrCtCeR47sBN-16" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="Context for Explanation with Evidence to client" vertex="1">
+        <mxCell id="bcNScEclYrCtCeR47sBN-16" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="Context for explanation with evidence to client" vertex="1">
           <mxGeometry height="60" width="120" x="550" y="1100" as="geometry" />
         </mxCell>
         <mxCell id="bcNScEclYrCtCeR47sBN-17" edge="1" parent="1" source="bcNScEclYrCtCeR47sBN-18" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" target="bcNScEclYrCtCeR47sBN-16">
@@ -75,6 +75,9 @@
         </mxCell>
         <mxCell id="bcNScEclYrCtCeR47sBN-36" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;font style=&quot;font-size: 8px;&quot;&gt;Here either absolute delta only or w.r.t the percentiles. Depends on what baseline we decide.&lt;/font&gt;" vertex="1">
           <mxGeometry height="80" width="190" x="675" y="888" as="geometry" />
+        </mxCell>
+        <mxCell id="bcNScEclYrCtCeR47sBN-41" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;ul&gt;&lt;li&gt;&lt;font style=&quot;font-size: 8px;&quot;&gt;current metrics&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 8px;&quot;&gt;baseline metrics&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 8px;&quot;&gt;deltas&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 8px;&quot;&gt;thresholds&lt;/font&gt;&lt;/li&gt;&lt;/ul&gt;" vertex="1">
+          <mxGeometry height="70" width="110" x="675" y="995" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
