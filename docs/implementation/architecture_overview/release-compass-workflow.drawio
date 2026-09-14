@@ -1,23 +1,87 @@
 <mxfile host="app.diagrams.net">
   <diagram name="Page-1" id="zrChHwomJYHwOwhWYssl">
-    <mxGraphModel dx="1212" dy="1142" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="693" dy="653" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="U70XmFBk3MbX6QNN5NTw-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="" vertex="1">
-          <mxGeometry height="530" width="1010" x="170" y="210" as="geometry" />
+        <mxCell id="GFf_hGTCJ-hVXIevb1b8-22" edge="1" parent="1" source="U70XmFBk3MbX6QNN5NTw-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="GFf_hGTCJ-hVXIevb1b8-1">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="U70XmFBk3MbX6QNN5NTw-2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="Conversational Agent" vertex="1">
-          <mxGeometry height="60" width="120" x="485" y="260" as="geometry" />
+          <mxGeometry height="60" width="120" x="480" y="220" as="geometry" />
         </mxCell>
-        <mxCell id="U70XmFBk3MbX6QNN5NTw-3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="Performance Gate" vertex="1">
-          <mxGeometry height="60" width="120" x="485" y="390" as="geometry" />
+        <mxCell id="GFf_hGTCJ-hVXIevb1b8-9" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;endArrow=none;endFill=0;" target="GFf_hGTCJ-hVXIevb1b8-3">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="420" y="640" as="sourcePoint" />
+          </mxGeometry>
         </mxCell>
-        <mxCell id="U70XmFBk3MbX6QNN5NTw-4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="Other Gate(s)" vertex="1">
-          <mxGeometry height="60" width="120" x="750" y="390" as="geometry" />
+        <mxCell id="GFf_hGTCJ-hVXIevb1b8-11" edge="1" parent="1" source="GFf_hGTCJ-hVXIevb1b8-15" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="GFf_hGTCJ-hVXIevb1b8-17">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="660" y="800" />
+            </Array>
+            <mxPoint x="660" y="640" as="sourcePoint" />
+            <mxPoint x="580" y="890" as="targetPoint" />
+          </mxGeometry>
         </mxCell>
-        <mxCell id="U70XmFBk3MbX6QNN5NTw-5" parent="1" style="shape=document;whiteSpace=wrap;html=1;boundedLbl=1;" value="Generic Gate Contract:&lt;div&gt;get_summary()&lt;/div&gt;&lt;div&gt;get_status()&lt;/div&gt;&lt;div&gt;get_failed_criteria()&lt;/div&gt;" vertex="1">
-          <mxGeometry height="120" width="140" x="1020" y="490" as="geometry" />
+        <mxCell id="GFf_hGTCJ-hVXIevb1b8-21" edge="1" parent="1" source="GFf_hGTCJ-hVXIevb1b8-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="GFf_hGTCJ-hVXIevb1b8-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="GFf_hGTCJ-hVXIevb1b8-1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="Report" vertex="1">
+          <mxGeometry height="60" width="120" x="480" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="GFf_hGTCJ-hVXIevb1b8-19" edge="1" parent="1" source="GFf_hGTCJ-hVXIevb1b8-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="GFf_hGTCJ-hVXIevb1b8-14">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="GFf_hGTCJ-hVXIevb1b8-20" edge="1" parent="1" source="GFf_hGTCJ-hVXIevb1b8-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="GFf_hGTCJ-hVXIevb1b8-15">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="GFf_hGTCJ-hVXIevb1b8-2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="Metric Mapping per Gate" vertex="1">
+          <mxGeometry height="60" width="120" x="480" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="GFf_hGTCJ-hVXIevb1b8-10" edge="1" parent="1" source="GFf_hGTCJ-hVXIevb1b8-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;exitX=0.486;exitY=0.959;exitDx=0;exitDy=0;exitPerimeter=0;" target="GFf_hGTCJ-hVXIevb1b8-17">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="418.32" y="800" />
+            </Array>
+            <mxPoint x="500" y="890" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GFf_hGTCJ-hVXIevb1b8-16" edge="1" parent="1" source="GFf_hGTCJ-hVXIevb1b8-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;endFill=0;" target="GFf_hGTCJ-hVXIevb1b8-14" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="GFf_hGTCJ-hVXIevb1b8-3" parent="1" style="shape=document;whiteSpace=wrap;html=1;boundedLbl=1;align=left;size=0.09090909090909091;" value="&lt;ul&gt;&lt;li&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;reponse time&amp;nbsp;&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;throughput&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;failure rate&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;CPU usage&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;memory usage&lt;/font&gt;&lt;/li&gt;&lt;/ul&gt;" vertex="1">
+          <mxGeometry height="90" width="120" x="360" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="GFf_hGTCJ-hVXIevb1b8-5" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;font style=&quot;font-size: 8px;&quot;&gt;The metrics i.e. the report has a point in time mapping in order to compare it to previous reports.&lt;/font&gt;" vertex="1">
+          <mxGeometry height="50" width="120" x="610" y="345" as="geometry" />
+        </mxCell>
+        <mxCell id="GFf_hGTCJ-hVXIevb1b8-6" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;font style=&quot;font-size: 8px;&quot;&gt;Deterministic mapping which one can extend as new gates are introduced.&lt;/font&gt;" vertex="1">
+          <mxGeometry height="50" width="110" x="640" y="448" as="geometry" />
+        </mxCell>
+        <mxCell id="GFf_hGTCJ-hVXIevb1b8-12" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="Performance Gate" vertex="1">
+          <mxGeometry height="60" width="120" x="480" y="990" as="geometry" />
+        </mxCell>
+        <mxCell id="GFf_hGTCJ-hVXIevb1b8-13" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="Explanation &amp;amp; Evidence" vertex="1">
+          <mxGeometry height="60" width="120" x="480" y="880" as="geometry" />
+        </mxCell>
+        <mxCell id="GFf_hGTCJ-hVXIevb1b8-14" parent="1" style="shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;shapeInside=1;fixedSize=1;" value="Performance Gate" vertex="1">
+          <mxGeometry height="80" width="120" x="360" y="550" as="geometry" />
+        </mxCell>
+        <mxCell id="GFf_hGTCJ-hVXIevb1b8-15" parent="1" style="shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;shapeInside=1;fixedSize=1;" value="Other Gate(s)" vertex="1">
+          <mxGeometry height="80" width="120" x="600" y="550" as="geometry" />
+        </mxCell>
+        <mxCell id="GFf_hGTCJ-hVXIevb1b8-18" edge="1" parent="1" source="GFf_hGTCJ-hVXIevb1b8-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" target="GFf_hGTCJ-hVXIevb1b8-13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="GFf_hGTCJ-hVXIevb1b8-17" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="Comparison w.r.t Historical Reports" vertex="1">
+          <mxGeometry height="60" width="120" x="480" y="770" as="geometry" />
+        </mxCell>
+        <mxCell id="GFf_hGTCJ-hVXIevb1b8-23" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;font style=&quot;font-size: 8px;&quot;&gt;Allows the system to answer the must have FR (Q12 =&amp;gt; QU3) defined in the paper.&lt;/font&gt;" vertex="1">
+          <mxGeometry height="50" width="110" x="600" y="800" as="geometry" />
+        </mxCell>
+        <mxCell id="GFf_hGTCJ-hVXIevb1b8-24" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;span style=&quot;font-size: 8px;&quot;&gt;Allows the system to answer the must have NFR (QV2 =&amp;gt; BH3) defined in the paper.&lt;/span&gt;" vertex="1">
+          <mxGeometry height="50" width="110" x="600" y="885" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
