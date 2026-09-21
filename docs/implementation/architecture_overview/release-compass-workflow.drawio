@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net">
   <diagram name="Page-1" id="zrChHwomJYHwOwhWYssl">
-    <mxGraphModel dx="1047" dy="-408" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="1187" dy="-316" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -212,6 +212,15 @@
             </mxGeometry>
           </mxCell>
         </UserObject>
+        <mxCell id="g_jZnerDPVS0GvyrhoXF-2" parent="74pH-vP_tIqhFQ5ZJQ2Y-1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;size=14;" value="&lt;div&gt;Structured data exchange&lt;/div&gt;(JSON)" vertex="1">
+          <mxGeometry height="78" width="70" x="1070" y="3090" as="geometry" />
+        </mxCell>
+        <mxCell id="g_jZnerDPVS0GvyrhoXF-1" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="add passed vs not passed =&amp;gt; need both for log/traceability" vertex="1">
+          <mxGeometry height="60" width="160" x="1140" y="2610" as="geometry" />
+        </mxCell>
+        <mxCell id="g_jZnerDPVS0GvyrhoXF-3" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="not only the numerical features are considered but also the categorical features." vertex="1">
+          <mxGeometry height="60" width="250" x="990" y="2940" as="geometry" />
+        </mxCell>
       </root>
     </mxGraphModel>
   </diagram>
