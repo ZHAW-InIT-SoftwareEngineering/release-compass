@@ -11,17 +11,17 @@
         </UserObject>
         <UserObject label="User Question&#xa;+ run context" mermaidId="n:A" mermaidBaseStyle="html=1;whiteSpace=wrap;strokeWidth=1;fillColor=light-dark(#ECECFF,#1f2020);strokeColor=light-dark(#9370DB,#cccccc);fontColor=light-dark(#333333,#cccccc);fontFamily=Trebuchet MS,Verdana,Arial,sans-serif;fontSize=16;" mermaidBaseValue="User Question&#xa;+ run context" id="74pH-vP_tIqhFQ5ZJQ2Y-2">
           <mxCell parent="74pH-vP_tIqhFQ5ZJQ2Y-1" style="html=1;whiteSpace=wrap;strokeWidth=1;fillColor=light-dark(#ECECFF,#1f2020);strokeColor=light-dark(#9370DB,#cccccc);fontColor=light-dark(#333333,#cccccc);fontFamily=Trebuchet MS,Verdana,Arial,sans-serif;fontSize=16;" vertex="1">
-            <mxGeometry height="73" width="160" x="652" y="1770" as="geometry" />
+            <mxGeometry height="73" width="160" x="652" y="1940" as="geometry" />
           </mxCell>
         </UserObject>
         <UserObject label="Conversational Agent&#xa;Interpret user intent" mermaidId="n:B" mermaidBaseStyle="html=1;whiteSpace=wrap;strokeWidth=1;fillColor=light-dark(#ECECFF,#1f2020);strokeColor=light-dark(#9370DB,#cccccc);fontColor=light-dark(#333333,#cccccc);fontFamily=Trebuchet MS,Verdana,Arial,sans-serif;fontSize=16;" mermaidBaseValue="Conversational Agent&#xa;Interpret user intent" id="74pH-vP_tIqhFQ5ZJQ2Y-3">
           <mxCell parent="74pH-vP_tIqhFQ5ZJQ2Y-1" style="html=1;whiteSpace=wrap;strokeWidth=1;fillColor=light-dark(#ECECFF,#1f2020);strokeColor=light-dark(#9370DB,#cccccc);fontColor=light-dark(#333333,#cccccc);fontFamily=Trebuchet MS,Verdana,Arial,sans-serif;fontSize=16;" vertex="1">
-            <mxGeometry height="73" width="211" x="626" y="1893" as="geometry" />
+            <mxGeometry height="73" width="211" x="626.5" y="2070" as="geometry" />
           </mxCell>
         </UserObject>
         <UserObject label="Performance comparison needed?" mermaidId="n:C" mermaidBaseStyle="rhombus;html=1;strokeWidth=1;whiteSpace=wrap;fillColor=light-dark(#ECECFF,#1f2020);strokeColor=light-dark(#9370DB,#cccccc);fontColor=light-dark(#333333,#cccccc);fontFamily=Trebuchet MS,Verdana,Arial,sans-serif;fontSize=16;" mermaidBaseValue="Performance comparison needed?" id="74pH-vP_tIqhFQ5ZJQ2Y-4">
           <mxCell parent="74pH-vP_tIqhFQ5ZJQ2Y-1" style="rhombus;html=1;strokeWidth=1;whiteSpace=wrap;fillColor=light-dark(#ECECFF,#1f2020);strokeColor=light-dark(#9370DB,#cccccc);fontColor=light-dark(#333333,#cccccc);fontFamily=Trebuchet MS,Verdana,Arial,sans-serif;fontSize=16;" vertex="1">
-            <mxGeometry height="174" width="174" x="645" y="2026" as="geometry" />
+            <mxGeometry height="174" width="174" x="645" y="2200" as="geometry" />
           </mxCell>
         </UserObject>
         <UserObject label="Invoke Tool&#xa;compare_performance(run_id)" mermaidId="n:D" mermaidBaseStyle="html=1;whiteSpace=wrap;strokeWidth=1;fillColor=light-dark(#ECECFF,#1f2020);strokeColor=light-dark(#9370DB,#cccccc);fontColor=light-dark(#333333,#cccccc);fontFamily=Trebuchet MS,Verdana,Arial,sans-serif;fontSize=16;" mermaidBaseValue="Invoke Tool&#xa;compare_performance(run_id)" id="74pH-vP_tIqhFQ5ZJQ2Y-5">
@@ -54,7 +54,7 @@
             <mxGeometry height="54" width="223" x="748" y="2941" as="geometry" />
           </mxCell>
         </UserObject>
-        <UserObject label="Build Evidence Pack&#xa;Current + Baseline + Delta + Thresholds + Provenance" mermaidId="n:J" mermaidBaseStyle="html=1;whiteSpace=wrap;strokeWidth=1;fillColor=light-dark(#ECECFF,#1f2020);strokeColor=light-dark(#9370DB,#cccccc);fontColor=light-dark(#333333,#cccccc);fontFamily=Trebuchet MS,Verdana,Arial,sans-serif;fontSize=16;" mermaidBaseValue="Build Evidence Pack&#xa;Current + Baseline + Delta + Thresholds + Provenance" id="74pH-vP_tIqhFQ5ZJQ2Y-11">
+        <UserObject label="Build Evidence Pack&lt;br&gt;Current + Baseline + Delta + Thresholds + Source" mermaidId="n:J" mermaidBaseStyle="html=1;whiteSpace=wrap;strokeWidth=1;fillColor=light-dark(#ECECFF,#1f2020);strokeColor=light-dark(#9370DB,#cccccc);fontColor=light-dark(#333333,#cccccc);fontFamily=Trebuchet MS,Verdana,Arial,sans-serif;fontSize=16;" mermaidBaseValue="Build Evidence Pack&#xa;Current + Baseline + Delta + Thresholds + Provenance" id="74pH-vP_tIqhFQ5ZJQ2Y-11">
           <mxCell parent="74pH-vP_tIqhFQ5ZJQ2Y-1" style="html=1;whiteSpace=wrap;strokeWidth=1;fillColor=light-dark(#ECECFF,#1f2020);strokeColor=light-dark(#9370DB,#cccccc);fontColor=light-dark(#333333,#cccccc);fontFamily=Trebuchet MS,Verdana,Arial,sans-serif;fontSize=16;" vertex="1">
             <mxGeometry height="73" width="443" x="638" y="3045" as="geometry" />
           </mxCell>
