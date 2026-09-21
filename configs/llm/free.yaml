@@ -1,0 +1,5 @@
+provider: "openrouter"
+model_name: "openrouter/free"
+temperature: 0.8
+max_token: 1024
+max_retries: 3
