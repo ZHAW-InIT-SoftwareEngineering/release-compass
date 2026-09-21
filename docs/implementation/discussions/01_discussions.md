@@ -41,9 +41,22 @@ Things we need to clarify for the POC and then persist as decisions in ADRs:
      * Confidence in the decision
      * Decision consistency
 
+   [Tool Decision File](../tools/tools.md)
+
 ***
 
 4. LLM
    What LLM do we want to use? Also, what is our budget?
 
    Here, I would suggest sticking with OpenRouter (https://openrouter.ai/). The benefit is that we can easily exchange the
+
+***
+
+Decisions after the meeting w/ David on the 21.09.2026: 
+
+1. Architecture should be designed in a way that gates can be extended i.e. new gates i.e. a `Security Gate` could be easily added. 
+2. LLM must be echangable i.e. use a self-hosted as well as a forntier closed-source one (i.e. for experimentation)
+3. Design: I (Cyril) am free to choose wht framworks etc. I will use if they are able to fullfil the workflow and that we are in charge of the hosting etc. 
+4. Start with a implementation of the POC defined in [Workflow Diagram](../architecture_overview/release-compass-architecture.drawio) respectively [Architecture Diagram](../architecture_overview/release-compass-architecture.drawio)
+5. W.r.t the data: I (Cyril) need to tell David what reports I need (i.e. 1x Passed, 1x Failed) because we decised in having this data static available and not directly accessing the Partner Projects API
+

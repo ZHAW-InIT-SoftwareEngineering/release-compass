@@ -53,3 +53,11 @@ Bascially derrived from the 3 agent sdefined in the proposed architecture:
 1. Decision explanation Agent:
     -  
     - 
+
+**Summary**
+
+For the POC: 
+1. get_performance_evidence(run_id)
+2. compare_performance(run_id_A, run_id_B)
+
+as discussed in: [Tool Decision File](../discussions/01_discussions.md)
