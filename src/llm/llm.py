@@ -1,23 +1,22 @@
-from langchain_openrouter import ChatOpenRouter
+import os
 
-from ..configs import LLMConfig
+from langchain_openai import ChatOpenAI
 
-
-def init_llm(llm_config: LLMConfig):
-    match llm_config.provider: 
-        case "openrouter":
-            return create_openrouter_model(llm_config)
-
-        case _:
-            raise ValueError(f"Unsupported LLM provider: {llm_config.provider}")        
+from ..configs.llm_config import LLMConfig
 
 
+def init_llm(llm_config: LLMConfig) -> ChatOpenAI:
+    api_key = os.getenv(llm_config.api_key_env)
+    if not api_key:
+        raise RuntimeError(
+            f"Missing required environment variable: {llm_config.api_key_env}"
+        )
 
-
-def create_openrouter_model(llm_config):
-    return ChatOpenRouter(
+    return ChatOpenAI(
         model=llm_config.model_name,
+        base_url=str(llm_config.base_url),
+        api_key=api_key,
         temperature=llm_config.temperature,
-        max_tokens=llm_config.max_token,
-        max_retries=llm_config.max_retries
+        max_completion_tokens=llm_config.max_completion_tokens,
+        max_retries=llm_config.max_retries,
     )

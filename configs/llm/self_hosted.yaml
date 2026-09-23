@@ -1,0 +1,8 @@
+# Replace with the model ID exposed by your vLLM server.
+model_name: "your-model-name"
+# Replace the host when vLLM runs on another machine.
+base_url: "http://localhost:8000/v1"
+api_key_env: "VLLM_API_KEY"
+temperature: 0.7
+max_completion_tokens: 1024
+max_retries: 3

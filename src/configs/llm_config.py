@@ -1,20 +1,16 @@
 from pathlib import Path
-from typing import Literal
 
 import yaml
-from pydantic import AnyUrl, BaseModel, Field
+from pydantic import AnyHttpUrl, BaseModel, Field
 
 
 class LLMConfig(BaseModel):
-    provider: Literal["vLLM", "openrouter"]
-    model_name: Literal[
-        "nvidia/nemotron-3-ultra-550b-a55b:free",
-        "openrouter/free"
-        ]
-    base_url: AnyUrl | None = None
+    model_name: str
+    base_url: AnyHttpUrl
+    api_key_env: str
     temperature: float = 0.7
-    max_tokens: int = Field(ge=1, le=1024)
-    max_retries: int = Field(ge=2, le=4) 
+    max_completion_tokens: int = Field(ge=1, le=1024)
+    max_retries: int = Field(ge=2, le=4)
 
 
 def load_llm_config(path: Path) -> LLMConfig:
