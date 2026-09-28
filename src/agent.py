@@ -7,8 +7,22 @@ from .harness.tools.calculation import (
     addition
 )
 
+from .application.ports.outbound.report_ingestion import ReportIngestionPort
+from .adapters.outbound.html_report import HTMLReport
+
+
+HTML_REPORT_PATH = Path("data/raw/reports/example_reports/report.html")
+LLM_CONFIG_PATH = Path("configs/llm/openrouter.yaml")
+
+
 def main(): 
-    LLM_CONFIG_PATH = Path("configs/llm/openrouter.yaml")
+
+    report_ingestion: ReportIngestionPort = HTMLReport()
+    report = report_ingestion.ingest(HTML_REPORT_PATH)
+    
+
+
+    
     llm_config = load_llm_config(LLM_CONFIG_PATH)
     llm = init_llm(llm_config)
 

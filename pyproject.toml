@@ -10,3 +10,9 @@ dependencies = [
     "langgraph>=1.2.11",
     "pydantic>=2.12.5",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.16.9",
+    "ty>=0.0.84",
+]
