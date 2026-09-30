@@ -20,6 +20,8 @@ def main():
     report_ingestion: ReportIngestionPort = HTMLReport()
     report = report_ingestion.ingest(HTML_REPORT_PATH)
 
+    
+
 
     # print(f"report:\n{report}")
     

@@ -9,6 +9,7 @@ dependencies = [
     "langchain-openai>=1.6.4",
     "langgraph>=1.2.11",
     "pydantic>=2.12.5",
+    "pysqlite3>=0.6.0",
 ]
 
 [dependency-groups]

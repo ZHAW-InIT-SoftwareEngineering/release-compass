@@ -18,6 +18,7 @@ from src.domain.gates.performance.performance_gate import (
     TransactionPerformance,
     ViolationPeriod,
 )
+from src.domain.report import Report
 
 
 class _ReportDataParser(HTMLParser):
@@ -167,10 +168,10 @@ def _resource(summary, timeseries=(), linear_trend=()):
 
 
 class HTMLReport:
-    def ingest(self, report_id: str | Path) -> PerformanceGate:
-        """Normalize the report at ``report_id`` into performance evidence."""
+    def ingest(self, report_path: str | Path) -> Report:
+        """Normalize the report at ``report_path`` into performance evidence."""
 
-        path = Path(report_id)
+        path = Path(report_path)
         parser = _ReportDataParser()
         parser.feed(path.read_text(encoding="utf-8"))
         if not parser.chunks:
@@ -178,13 +179,12 @@ class HTMLReport:
 
         data = json.loads("".join(parser.chunks))
         apm = data["aggregatorSummary"]["metrics"]["apm"]
-        result = PerformanceGate()
-        result.report_id = str(report_id)
-        result.response_time = _response_time(
+        performance_gate = PerformanceGate()
+        performance_gate.response_time = _response_time(
             apm["response_time"], apm["response_time"].get("timeseries") or ()
         )
-        result.throughput = _throughput(apm["load"], apm["load"].get("timeseries") or ())
-        result.request_outcomes = _outcomes(apm["response_time"])
+        performance_gate.throughput = _throughput(apm["load"], apm["load"].get("timeseries") or ())
+        performance_gate.request_outcomes = _outcomes(apm["response_time"])
 
         transactions = {}
         for item in data.get("rtRuleBased", ()):
@@ -211,20 +211,20 @@ class HTMLReport:
         for name, status in nfr.get("per_transaction", {}).items():
             transaction = transactions.setdefault(name, TransactionPerformance(name=name, response_time=None))
             transaction.nfr_status = status.get("status")
-        result.transactions = transactions
+        performance_gate.transactions = transactions
 
         for metric_name, component_key in (("cpu", "cpuComponents"), ("memory", "ramComponents")):
             components = {}
             for item in data.get(component_key, ()):
                 metric = _resource(item["summary"], item.get("timeseries") or (), item.get("linear_trend") or ())
                 components[metric.summary.source] = metric
-            setattr(result, f"{metric_name}_components", components)
+            setattr(performance_gate, f"{metric_name}_components", components)
             overall = _resource(apm[metric_name])
             ranges = [component.summary for component in components.values()]
             starts = [value.start_time for value in ranges if value.start_time]
             ends = [value.end_time for value in ranges if value.end_time]
             overall.summary.start_time = min(starts) if starts else None
             overall.summary.end_time = max(ends) if ends else None
-            setattr(result, metric_name, overall)
+            setattr(performance_gate, metric_name, overall)
 
-        return result
+        return Report(source_path=str(path), gates=[performance_gate])
