@@ -14,7 +14,8 @@ from .llm.llm import init_llm
 from .harness.system.system_prompt import system_prompt
 
 
-HTML_REPORT_PATH = Path("data/raw/reports/example_reports/report.html")
+CURRENT_HTML_REPORT_PATH = Path("data/raw/reports/example_reports/report.html")
+PAST_HTML_REPORT_PATH = Path("data/raw/reports/example_reports/synthetic_report.html")
 LLM_CONFIG_PATH = Path("configs/llm/openrouter.yaml")
 LOCAL_CONFIG_PATH = Path("configs/application/local.yaml")
 
@@ -24,8 +25,12 @@ def main() -> None:
     report_repository = SQLiteReportRepository(local_config.db_path)
 
     report_ingestion: ReportIngestionPort = HTMLReport()
-    current_report = report_ingestion.ingest(HTML_REPORT_PATH)
+    
+    current_report = report_ingestion.ingest(CURRENT_HTML_REPORT_PATH)
     report_repository.save(current_report)
+
+    last_report = report_ingestion.ingest(PAST_HTML_REPORT_PATH)
+    report_repository.save(last_report)
 
     llm_config = load_llm_config(LLM_CONFIG_PATH)
     llm = init_llm(llm_config)
@@ -34,7 +39,7 @@ def main() -> None:
     model_with_tools = llm.bind_tools(tools)
     graph = build_graph(model_with_tools, tools)
 
-    SYSTEM_PROMPT = system_prompt(current_report)
+    SYSTEM_PROMPT = system_prompt(current_report, last_report)
     messages: list[AnyMessage] = [
         SystemMessage(
             content=SYSTEM_PROMPT
