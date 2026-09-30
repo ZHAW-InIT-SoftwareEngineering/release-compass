@@ -1,5 +1,10 @@
 
-class Report: 
+from dataclasses import dataclass, field
+
+from src.domain.gates.gate import Gate
+
+
+@dataclass
+class Report:
     report_id: str | None = None
-    run_id: str | None = None
-    baseline_run_id: str | None = None
+    gates: list[Gate] = field(default_factory=list)

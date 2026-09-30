@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from src.domain.gates.performance.models import PerformanceGate
+from src.domain.gates.performance.performance_gate import PerformanceGate
 
 
 class ReportIngestionPort(Protocol): 

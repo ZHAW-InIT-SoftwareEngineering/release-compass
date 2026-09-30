@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass, field
 
-from src.domain.report import Report
+from src.domain.gates.gate import Gate
 
 
 @dataclass
@@ -102,7 +102,7 @@ class ResourceMetric:
 
 
 @dataclass
-class PerformanceGate(Report):
+class PerformanceGate(Gate):
     """Performance evidence normalized from a single report/run."""
 
     response_time: ResponseTimeMetric | None = None

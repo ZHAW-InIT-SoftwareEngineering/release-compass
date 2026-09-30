@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from langchain_openai import ChatOpenAI
+from pydantic import SecretStr
 
 from ..configs.llm_config import LLMConfig
 
@@ -8,7 +9,7 @@ from ..configs.llm_config import LLMConfig
 _ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
 
 
-def _read_env_file(name: str) -> str | None:
+def _read_env_file(name: str) -> SecretStr | None:
     if not _ENV_FILE.is_file():
         return None
 
@@ -21,7 +22,7 @@ def _read_env_file(name: str) -> str | None:
             value = value.strip()
             if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
                 value = value[1:-1]
-            return value or None
+            return SecretStr(value) if value is not None else None
     return None
 
 

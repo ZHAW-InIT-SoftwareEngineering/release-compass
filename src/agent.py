@@ -31,7 +31,7 @@ def main():
 
     llm.bind_tools([addition])
 
-    messages = [HumanMessage(content="Add 3 and 4.")]
+    messages = [HumanMessage(content="Add 3 and 4. Use the addition tool you have!")]
 
     response = llm.invoke(
         messages

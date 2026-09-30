@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from html.parser import HTMLParser
 from pathlib import Path
 
-from src.domain.gates.performance.models import (
+from src.domain.gates.performance.performance_gate import (
     MetricAssessment,
     MetricSummary,
     PerformanceGate,
