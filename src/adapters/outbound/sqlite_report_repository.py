@@ -115,13 +115,13 @@ class SQLiteReportRepository(ReportReader, ReportWriter):
                     report_id TEXT NOT NULL REFERENCES reports(report_id) ON DELETE CASCADE,
                     gate_index INTEGER NOT NULL,
                     gate_type TEXT NOT NULL,
-                    baseline_run_id TEXT,
+                    baseline_report_id TEXT,
                     payload_json TEXT NOT NULL,
                     PRIMARY KEY (report_id, gate_index)
                 );
 
-                CREATE INDEX IF NOT EXISTS gates_baseline_run_id_idx
-                    ON gates(baseline_run_id);
+                CREATE INDEX IF NOT EXISTS gates_baseline_report_id_idx
+                    ON gates(baseline_report_id);
                 """
             )
 
@@ -138,14 +138,14 @@ class SQLiteReportRepository(ReportReader, ReportWriter):
             connection.execute("DELETE FROM gates WHERE report_id = ?", (str(report.report_id),))
             connection.executemany(
                 """INSERT INTO gates
-                   (report_id, gate_index, gate_type, baseline_run_id, payload_json)
+                   (report_id, gate_index, gate_type, baseline_report_id, payload_json)
                    VALUES (?, ?, ?, ?, ?)""",
                 [
                     (
                         str(report.report_id),
                         index,
                         type(gate).__name__,
-                        str(gate.baseline_run_id) if gate.baseline_run_id else None,
+                        str(gate.baseline_report_id) if gate.baseline_report_id else None,
                         json.dumps(_encode(gate), separators=(",", ":")),
                     )
                     for index, gate in enumerate(report.gates)

@@ -4,4 +4,4 @@ from uuid import UUID
 
 @dataclass
 class Gate:
-    baseline_run_id: UUID | None = None
+    baseline_report_id: UUID | None = None
