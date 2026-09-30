@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from langchain.messages import HumanMessage
+from langchain.messages import AnyMessage, HumanMessage, SystemMessage
 
 from .adapters.outbound.html_report import HTMLReport
 from .adapters.outbound.sqlite_report_repository import SQLiteReportRepository
@@ -11,6 +11,7 @@ from .domain.gates.performance.performance_gate import PerformanceGate
 from .harness.tools.compare_performance import build_compare_gate_tool
 from .harness.graph import build_graph
 from .llm.llm import init_llm
+from .harness.system.system_prompt import system_prompt
 
 
 HTML_REPORT_PATH = Path("data/raw/reports/example_reports/report.html")
@@ -33,20 +34,26 @@ def main() -> None:
     model_with_tools = llm.bind_tools(tools)
     graph = build_graph(model_with_tools, tools)
 
-    baseline_report_id = input("Baseline report UUID: ").strip()
-    response = graph.invoke(
-        {
-            "messages": [
-                HumanMessage(
-                    content=(
-                        f"Compare current report {current_report.report_id} against "
-                        f"baseline report {baseline_report_id}. Explain the metric changes."
-                    )
-                )
-            ]
-        }
-    )
-    print(response["messages"][-1].content)
+    SYSTEM_PROMPT = system_prompt(current_report)
+    messages: list[AnyMessage] = [
+        SystemMessage(
+            content=SYSTEM_PROMPT
+        )
+    ]
+
+    try:
+        while True:
+            user_input = input("You: ").strip()
+            if not user_input:
+                continue
+
+            response = graph.invoke(
+                {"messages": [*messages, HumanMessage(content=user_input)]}
+            )
+            messages = response["messages"]
+            print(f"Assistant: {messages[-1].content}")
+    except KeyboardInterrupt:
+        print("\nGoodbye")
 
 
 if __name__ == "__main__":
