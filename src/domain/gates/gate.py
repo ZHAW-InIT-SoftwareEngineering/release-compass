@@ -1,7 +1,7 @@
 from dataclasses import dataclass
+from uuid import UUID
 
 
 @dataclass
 class Gate:
-    run_id: str | None = None
-    baseline_run_id: str | None = None
+    baseline_run_id: UUID | None = None

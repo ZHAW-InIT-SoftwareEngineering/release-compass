@@ -3,7 +3,7 @@ from pathlib import Path
 from langchain_openai import ChatOpenAI
 from pydantic import SecretStr
 
-from ..configs.llm_config import LLMConfig
+from ..configs.llm.llm_config import LLMConfig
 
 
 _ENV_FILE = Path(__file__).resolve().parents[2] / ".env"

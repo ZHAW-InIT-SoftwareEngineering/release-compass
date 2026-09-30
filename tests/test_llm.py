@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from src.configs.llm_config import LLMConfig
+from src.configs.llm.llm_config import LLMConfig
 from src.llm import llm as llm_module
 
 

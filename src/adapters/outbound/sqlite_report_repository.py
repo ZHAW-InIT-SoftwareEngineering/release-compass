@@ -1,5 +1,3 @@
-from uuid import UUID
-
 """SQLite persistence adapter for domain reports."""
 
 import json
@@ -57,7 +55,7 @@ def _encode(value: Any) -> Any:
     if isinstance(value, (list, tuple)):
         return [_encode(item) for item in value]
     if isinstance(value, UUID):
-        return str(value)
+        return {"__type__": "UUID", "value": str(value)}
     return value
 
 
@@ -69,6 +67,8 @@ def _decode(value: Any) -> Any:
         type_name = value.get("__type__")
         if type_name is None:
             return decoded
+        if type_name == "UUID":
+            return UUID(decoded["value"])
         try:
             domain_type = _DOMAIN_TYPES[type_name]
         except KeyError as error:
@@ -115,13 +115,13 @@ class SQLiteReportRepository(ReportReader, ReportWriter):
                     report_id TEXT NOT NULL REFERENCES reports(report_id) ON DELETE CASCADE,
                     gate_index INTEGER NOT NULL,
                     gate_type TEXT NOT NULL,
-                    run_id TEXT,
                     baseline_run_id TEXT,
                     payload_json TEXT NOT NULL,
                     PRIMARY KEY (report_id, gate_index)
                 );
 
-                CREATE INDEX IF NOT EXISTS gates_run_id_idx ON gates(run_id);
+                CREATE INDEX IF NOT EXISTS gates_baseline_run_id_idx
+                    ON gates(baseline_run_id);
                 """
             )
 
@@ -138,15 +138,14 @@ class SQLiteReportRepository(ReportReader, ReportWriter):
             connection.execute("DELETE FROM gates WHERE report_id = ?", (str(report.report_id),))
             connection.executemany(
                 """INSERT INTO gates
-                   (report_id, gate_index, gate_type, run_id, baseline_run_id, payload_json)
-                   VALUES (?, ?, ?, ?, ?, ?)""",
+                   (report_id, gate_index, gate_type, baseline_run_id, payload_json)
+                   VALUES (?, ?, ?, ?, ?)""",
                 [
                     (
                         str(report.report_id),
                         index,
                         type(gate).__name__,
-                        gate.run_id,
-                        gate.baseline_run_id,
+                        str(gate.baseline_run_id) if gate.baseline_run_id else None,
                         json.dumps(_encode(gate), separators=(",", ":")),
                     )
                     for index, gate in enumerate(report.gates)
