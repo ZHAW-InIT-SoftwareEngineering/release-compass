@@ -6,6 +6,10 @@ from src.domain.deltas.gate_deltas import GateDeltas
 from src.domain.gates.gate import Gate
 
 
+class ReportNotFoundError(LookupError):
+    """A requested report given the provided id is absent."""
+
+
 def compare_gate(
     report_id: UUID,
     baseline_report_id: UUID,
@@ -16,8 +20,8 @@ def compare_gate(
 
     current_report = report_reader.get_by_id(report_id)
     if current_report is None:
-        raise LookupError(f"Current report {report_id} was not found")
+        raise ReportNotFoundError(f"Current report {report_id} was not found")
     baseline_report = report_reader.get_by_id(baseline_report_id)
     if baseline_report is None:
-        raise LookupError(f"Baseline report {baseline_report_id} was not found")
+        raise ReportNotFoundError(f"Baseline report {baseline_report_id} was not found")
     return compute_report_deltas(current_report, baseline_report, gate_type)
