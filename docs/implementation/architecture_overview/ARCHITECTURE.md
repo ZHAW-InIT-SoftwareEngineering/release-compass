@@ -34,7 +34,16 @@ The source diagram is [release-compass-architecture.drawio](release-compass-arch
 5. Metric comparison evaluates the normalized current values against the
    baseline and configured thresholds.
 6. The evidence-pack builder returns a structured evidence pack to the tool.
+   It contains independent gate outcomes and the report-level release outcome,
+   plus current and baseline identifiers and snapshots for one-hop traceability.
    The LLM uses that result to produce an evidence-grounded response in the UI.
+
+Each gate is assessed independently using its configured rules. A report
+passes only when every gate passes. The POC baseline policy selects the most
+recently recorded passing gate of the same type for a gate comparison and the
+most recently recorded passing report for a release comparison. See
+[ADR 0005](../../adrs/0005_separate_gate_and_report_acceptance.md) and
+[ADR 0006](../../adrs/0006_use_last_passed_gate_and_report_as_baselines.md).
 
 ## Metric-independent gate contract
 
@@ -59,7 +68,7 @@ performance reports. Its defined metrics and scope are recorded in
 baseline value, delta, applicable thresholds, and source provenance in the
 evidence pack. See [the tool notes](../tools/tools.md) for the current POC
 tool discussion and [the discussion record](../discussions/01_discussions.md)
-for open decisions such as the baseline policy.
+for the history of the POC discussions.
 
 ## Architectural constraints
 

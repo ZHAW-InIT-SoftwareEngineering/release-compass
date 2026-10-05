@@ -47,9 +47,16 @@ For every assessed metric and source, the evidence pack contains:
 - the relevant supporting evidence, such as violation periods or HTTP-code
   distribution.
 
+It also reports the independent gate result and the report-level release
+result. The report passes only if every gate passes. The evidence identifies
+the current and baseline gates and reports, includes their outcomes and
+snapshots, and supports tracing one hop back through the report history. Each
+gate's baseline source report is included even when it differs from the
+report-level baseline.
+
 The deterministic analysis layer creates this pack. The LLM may explain its
-contents but must not calculate metrics, choose a different baseline, or infer
-an unsupported release decision.
+contents but must not calculate metrics, choose a different baseline, or
+decide whether a gate or release passes.
 
 ## Scope decisions
 
@@ -58,6 +65,8 @@ The following decisions are in effect for the POC:
 | Decision | POC consequence |
 | --- | --- |
 | Performance is the only implemented quality gate. | Security, Functional Suitability, Build Quality, logs, and JVM data are out of scope for assessment. |
+| Gate and report acceptance are separate decisions. | Each gate is assessed independently; a report passes only when all its gates pass. |
+| Baselines use the most recently recorded passing item. | A gate uses the last passing gate of its type; a report uses the last passing report. |
 | Gate logic is metric-domain specific, but the architecture is gate-extensible. | A later gate supplies its own report adapter, metric definitions, baseline policy, comparison rules, and configuration without changing the client or agent contract. |
 | Analysis is deterministic and evidence-first. | Report normalization, baseline selection, comparison, threshold evaluation, and evidence-pack construction are outside the LLM. |
 | The LLM is exchangeable. | The POC must retain a provider/model boundary so self-hosted and frontier models can be evaluated without changing gate logic. |
@@ -81,8 +90,6 @@ needed for an explanation.
 
 These items are intentionally not decided by this document:
 
-- **Baseline policy:** previous compatible run, moving average, or simple
-  average still needs to be selected and configured.
 - **Trigger model:** the POC supports a user-initiated comparison; background
   or event-driven audits and persistent audit backlogs are not in scope.
 - **Threshold ownership and values:** use the values supplied by the report or
