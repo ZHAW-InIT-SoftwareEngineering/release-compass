@@ -1,8 +1,7 @@
-
 """Read the embedded performance data from an AI-SQUARE HTML report."""
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -45,7 +44,7 @@ def _time_range(timeseries):
     if not timestamps:
         return None, None
     return tuple(
-        datetime.fromtimestamp(timestamp / 1000, tz=timezone.utc).isoformat()
+        datetime.fromtimestamp(timestamp / 1000, tz=UTC).isoformat()
         for timestamp in (min(timestamps), max(timestamps))
     )
 
@@ -72,7 +71,17 @@ def _summary(summary, timeseries=(), extra_evidence=None):
     start_time, end_time = _time_range(timeseries)
     evidence = {
         key: summary[key]
-        for key in ("p0_value", "p25_value", "p75_value", "std", "coef", "p_value", "ci_lower", "ci_upper", "r_squared_adj")
+        for key in (
+            "p0_value",
+            "p25_value",
+            "p75_value",
+            "std",
+            "coef",
+            "p_value",
+            "ci_lower",
+            "ci_upper",
+            "r_squared_adj",
+        )
         if key in summary
     }
     if timeseries:
@@ -134,7 +143,14 @@ def _throughput(summary, timeseries=(), extra_evidence=None):
     start_time, end_time = _time_range(timeseries)
     evidence = {
         key: summary[key]
-        for key in ("load_nfr_details", "coef", "p_value", "ci_lower", "ci_upper", "r_squared_adj")
+        for key in (
+            "load_nfr_details",
+            "coef",
+            "p_value",
+            "ci_lower",
+            "ci_upper",
+            "r_squared_adj",
+        )
         if key in summary
     }
     if timeseries:
@@ -144,7 +160,9 @@ def _throughput(summary, timeseries=(), extra_evidence=None):
     return ThroughputMetric(
         source=summary["source"],
         unit=summary.get("units", "req/s"),
-        observation_count=summary.get("num_obs", summary.get("n_data_points", len(timeseries))),
+        observation_count=summary.get(
+            "num_obs", summary.get("n_data_points", len(timeseries))
+        ),
         target_nfr=summary.get("target_nfr"),
         tps=summary.get("tps"),
         mean=summary.get("mean"),
@@ -183,7 +201,9 @@ class HTMLReport:
         performance_gate.response_time = _response_time(
             apm["response_time"], apm["response_time"].get("timeseries") or ()
         )
-        performance_gate.throughput = _throughput(apm["load"], apm["load"].get("timeseries") or ())
+        performance_gate.throughput = _throughput(
+            apm["load"], apm["load"].get("timeseries") or ()
+        )
         performance_gate.request_outcomes = _outcomes(apm["response_time"])
 
         transactions = {}
@@ -195,28 +215,49 @@ class HTMLReport:
                 response_time=_response_time(
                     summary,
                     item.get("timeseries") or (),
-                    {key: item[key] for key in ("per_minute", "linear_trend_timeseries") if key in item},
+                    {
+                        key: item[key]
+                        for key in ("per_minute", "linear_trend_timeseries")
+                        if key in item
+                    },
                 ),
                 request_outcomes=_outcomes(summary),
             )
         for item in data.get("loadRuleBased", ()):
             name = item["pageName"]
-            transaction = transactions.setdefault(name, TransactionPerformance(name=name, response_time=None))
+            transaction = transactions.setdefault(
+                name, TransactionPerformance(name=name, response_time=None)
+            )
             transaction.throughput = _throughput(
                 item["summary"],
                 item.get("timeseries") or (),
-                {key: item[key] for key in ("per_minute", "linear_trend_timeseries") if key in item},
+                {
+                    key: item[key]
+                    for key in ("per_minute", "linear_trend_timeseries")
+                    if key in item
+                },
             )
-        nfr = data["aggregatorSummary"]["overall_score"]["nfr_compliance"]["metrics"]["apm"]
+        nfr = data["aggregatorSummary"]["overall_score"]["nfr_compliance"]["metrics"][
+            "apm"
+        ]
         for name, status in nfr.get("per_transaction", {}).items():
-            transaction = transactions.setdefault(name, TransactionPerformance(name=name, response_time=None))
+            transaction = transactions.setdefault(
+                name, TransactionPerformance(name=name, response_time=None)
+            )
             transaction.nfr_status = status.get("status")
         performance_gate.transactions = transactions
 
-        for metric_name, component_key in (("cpu", "cpuComponents"), ("memory", "ramComponents")):
+        for metric_name, component_key in (
+            ("cpu", "cpuComponents"),
+            ("memory", "ramComponents"),
+        ):
             components = {}
             for item in data.get(component_key, ()):
-                metric = _resource(item["summary"], item.get("timeseries") or (), item.get("linear_trend") or ())
+                metric = _resource(
+                    item["summary"],
+                    item.get("timeseries") or (),
+                    item.get("linear_trend") or (),
+                )
                 components[metric.summary.source] = metric
             setattr(performance_gate, f"{metric_name}_components", components)
             overall = _resource(apm[metric_name])
@@ -227,4 +268,9 @@ class HTMLReport:
             overall.summary.end_time = max(ends) if ends else None
             setattr(performance_gate, metric_name, overall)
 
-        return Report(source_path=str(path), gates=[performance_gate])
+        return Report(
+            source_path=str(path),
+            generated_at_date=data.get("generated_at_date"),
+            generated_at_time=data.get("generated_at_time"),
+            gates=[performance_gate],
+        )

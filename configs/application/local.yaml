@@ -1,1 +1,11 @@
-db_path: data/database/release_compass.sqlite3
+system:
+  db_path: data/database/release_compass.sqlite3
+
+data:
+  reports:
+    - path: data/raw/reports/example_reports/synthetic_report.html
+      generated_at_date: "2026-09-02"
+      generated_at_time: "08:44:21"
+    - path: data/raw/reports/example_reports/report.html
+      generated_at_date: "2026-09-02"
+      generated_at_time: "08:44:22"

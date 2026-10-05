@@ -4,8 +4,23 @@ import yaml
 from pydantic import BaseModel
 
 
-class LocalConfig(BaseModel):
+class SystemConfig(BaseModel):
     db_path: Path
+
+
+class ReportInputConfig(BaseModel):
+    path: Path
+    generated_at_date: str
+    generated_at_time: str
+
+
+class DataConfig(BaseModel):
+    reports: list[ReportInputConfig]
+
+
+class LocalConfig(BaseModel):
+    system: SystemConfig
+    data: DataConfig
 
 
 def load_local_config(path: Path) -> LocalConfig:

@@ -1,0 +1,19 @@
+metrics:
+  response_time:
+    operator: ">="
+    score: 0.8
+  throughput:
+    operator: ">="
+    score: 0.8
+  request_outcomes:
+    operator: ">="
+    score: 0.8
+  transaction_nfr_status:
+    operator: ">="
+    score: 0.8
+  cpu:
+    operator: ">="
+    score: 0.8
+  memory:
+    operator: ">="
+    score: 0.8
