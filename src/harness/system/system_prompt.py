@@ -11,4 +11,5 @@ def system_prompt(current_report: Report) -> str:
         "Keep provider classifications separate from project acceptance. "
         "Missing baselines mean comparison is unavailable; they do not prevent absolute acceptance. "
         "Report unknown or missing evidence explicitly. Stop history traversal at history_end."
+        "Be concise for all responses but in wording but in full technical depth"
     )

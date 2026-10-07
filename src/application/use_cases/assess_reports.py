@@ -3,24 +3,20 @@
 import json
 from dataclasses import dataclass, field
 from hashlib import sha256
+from typing import Any
 from uuid import NAMESPACE_URL, UUID, uuid5
 
 from src.application.ports.outbound.report_history import ReportHistory
 from src.application.use_cases.compare_gate import ReportNotFoundError
-from src.configs.gates.performance.performance_gate import PerformanceGateConfig
 from src.domain.assessment import (
-    POLICY_VERSION,
     GateAcceptance,
     GateDefinition,
     Outcome,
-    assess_performance,
     combine_outcomes,
     compare_acceptance_scores,
 )
-from src.domain.deltas.performance_comparison import compare_performance_values
 from src.domain.evidence import EvidencePack, GateEvidence, json_value
 from src.domain.gates.gate import Gate
-from src.domain.gates.performance.performance_gate import PerformanceGate
 from src.domain.history import latest_passing, report_order
 from src.domain.report import Report
 
@@ -39,44 +35,15 @@ class AssessmentService:
     def __init__(
         self,
         repository: ReportHistory,
-        config: PerformanceGateConfig,
-        gate_definitions: list[GateDefinition] | None = None,
+        gate_definitions: list[GateDefinition],
+        configuration: dict[str, Any],
     ):
         self.repository = repository
-        self.thresholds = {
-            name: value.score for name, value in vars(config.metrics).items()
-        }
-
-        def performance_assessor(gate: Gate) -> GateAcceptance:
-            if not isinstance(gate, PerformanceGate):
-                raise TypeError("Expected PerformanceGate")
-            return assess_performance(gate, self.thresholds)
-
-        def performance_comparison(current: Gate, baseline: Gate | None) -> dict:
-            if not isinstance(current, PerformanceGate) or (
-                baseline is not None and not isinstance(baseline, PerformanceGate)
-            ):
-                raise TypeError("Expected PerformanceGate")
-            return compare_performance_values(current, baseline)
-
-        definitions = (
-            gate_definitions
-            if gate_definitions is not None
-            else [
-                GateDefinition(
-                    PerformanceGate,
-                    performance_assessor,
-                    performance_comparison,
-                    POLICY_VERSION,
-                ),
-            ]
-        )
-        self.definitions = {item.gate_type.__name__: item for item in definitions}
-        if not definitions or len(self.definitions) != len(definitions):
+        self.definitions = {item.gate_type.__name__: item for item in gate_definitions}
+        if not gate_definitions or len(self.definitions) != len(gate_definitions):
             raise ValueError("Gate definitions must be nonempty and uniquely named")
         self.configuration = {
-            "performance": config.model_dump(),
-            "policy_version": POLICY_VERSION,
+            **configuration,
             "required_gates": sorted(self.definitions),
             "gate_policy_versions": {
                 name: item.policy_version for name, item in self.definitions.items()
@@ -101,9 +68,7 @@ class AssessmentService:
         report_baseline = latest_passing(state.previous_reports, state.packs)
         snapshots = self._current_snapshots(report, report_baseline, state)
         gates = self._assess_report_gates(report, snapshots, state)
-        outcome = combine_outcomes(
-            [item.acceptance.outcome for item in gates.values()]
-        )
+        outcome = combine_outcomes([item.acceptance.outcome for item in gates.values()])
         snapshots[str(report.report_id)]["acceptance"] = {
             "outcome": outcome,
             "gates": {
@@ -201,9 +166,7 @@ class AssessmentService:
     def _baseline_gate(baseline: Report | None, gate_type: type[Gate]) -> Gate | None:
         if baseline is None:
             return None
-        return next(
-            (gate for gate in baseline.gates if type(gate) is gate_type), None
-        )
+        return next((gate for gate in baseline.gates if type(gate) is gate_type), None)
 
     def _build_evidence_pack(
         self,
@@ -214,12 +177,8 @@ class AssessmentService:
         snapshots: dict[str, dict],
         state: _PreparationState,
     ) -> EvidencePack:
-        predecessor = (
-            state.previous_reports[-1] if state.previous_reports else None
-        )
-        predecessor_pack = (
-            state.packs[predecessor.report_id] if predecessor else None
-        )
+        predecessor = state.previous_reports[-1] if state.previous_reports else None
+        predecessor_pack = state.packs[predecessor.report_id] if predecessor else None
         report_baseline_pack = (
             state.packs[report_baseline.report_id] if report_baseline else None
         )

@@ -2,7 +2,7 @@
 
 import json
 import sqlite3
-from collections.abc import Generator
+from collections.abc import Generator, Iterable
 from contextlib import contextmanager
 from dataclasses import fields, is_dataclass
 from math import isfinite
@@ -15,35 +15,13 @@ from src.application.ports.outbound.report_writer import ReportWriter
 from src.domain.assessment import GateAcceptance, MetricAcceptance, SourceAssessment
 from src.domain.evidence import EvidencePack, GateEvidence
 from src.domain.gates.gate import Gate
-from src.domain.gates.performance.performance_gate import (
-    MetricAssessment,
-    MetricSummary,
-    PerformanceGate,
-    RequestOutcomes,
-    ResourceMetric,
-    ResponseTimeMetric,
-    ThresholdConfiguration,
-    ThroughputMetric,
-    TransactionPerformance,
-    ViolationPeriod,
-)
 from src.domain.history import generated_at
 from src.domain.report import Report
 
-_DOMAIN_TYPES = {
+_CORE_DOMAIN_TYPES = {
     item.__name__: item
     for item in (
         Gate,
-        MetricAssessment,
-        MetricSummary,
-        PerformanceGate,
-        RequestOutcomes,
-        ResourceMetric,
-        ResponseTimeMetric,
-        ThresholdConfiguration,
-        ThroughputMetric,
-        TransactionPerformance,
-        ViolationPeriod,
         SourceAssessment,
         MetricAcceptance,
         GateAcceptance,
@@ -70,12 +48,14 @@ def _encode(value: Any) -> Any:
     return value
 
 
-def _decode(value: Any) -> Any:
+def _decode(value: Any, domain_types: dict[str, type]) -> Any:
     if isinstance(value, list):
-        return [_decode(item) for item in value]
+        return [_decode(item, domain_types) for item in value]
     if isinstance(value, dict):
         decoded = {
-            key: _decode(item) for key, item in value.items() if key != "__type__"
+            key: _decode(item, domain_types)
+            for key, item in value.items()
+            if key != "__type__"
         }
         type_name = value.get("__type__")
         if type_name is None:
@@ -85,7 +65,7 @@ def _decode(value: Any) -> Any:
         if type_name == "NonFiniteFloat":
             return float(decoded["value"])
         try:
-            domain_type = _DOMAIN_TYPES[type_name]
+            domain_type = domain_types[type_name]
         except KeyError as error:
             raise ValueError(f"Unknown stored domain type: {type_name}") from error
         return domain_type(**decoded)
@@ -95,9 +75,16 @@ def _decode(value: Any) -> Any:
 class SQLiteReportRepository(ReportReader, ReportWriter):
     """Store reports and gates in SQLite; nested metric values use JSON."""
 
-    def __init__(self, database_path: str | Path):
+    def __init__(self, database_path: str | Path, domain_types: Iterable[type] = ()):
         self._closed = False
         self._database_path = str(database_path)
+        self._domain_types = {**_CORE_DOMAIN_TYPES}
+        for domain_type in domain_types:
+            if domain_type.__name__ in self._domain_types:
+                raise ValueError(
+                    f"Duplicate stored domain type name: {domain_type.__name__}"
+                )
+            self._domain_types[domain_type.__name__] = domain_type
         self._memory_connection = (
             sqlite3.connect(":memory:") if self._database_path == ":memory:" else None
         )
@@ -284,7 +271,10 @@ class SQLiteReportRepository(ReportReader, ReportWriter):
                 (str(report_id),),
             ).fetchall()
 
-        gates = [_decode(json.loads(row["payload_json"])) for row in gate_rows]
+        gates = [
+            _decode(json.loads(row["payload_json"]), self._domain_types)
+            for row in gate_rows
+        ]
         return Report(
             report_id=UUID(report_row["report_id"]),
             source_path=report_row["source_path"],
@@ -362,7 +352,11 @@ class SQLiteReportRepository(ReportReader, ReportWriter):
                 "SELECT payload_json FROM evidence_packs WHERE report_id = ? AND assessment_version = ?",
                 (str(report_id), version),
             ).fetchone()
-        return _decode(json.loads(row["payload_json"])) if row else None
+        return (
+            _decode(json.loads(row["payload_json"]), self._domain_types)
+            if row
+            else None
+        )
 
     def save_evidence(self, evidence: EvidencePack) -> None:
         payload = json.dumps(

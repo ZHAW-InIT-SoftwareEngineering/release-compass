@@ -4,11 +4,12 @@ from langchain.messages import AnyMessage, HumanMessage, SystemMessage
 
 from .adapters.outbound.html_report import HTMLReport
 from .adapters.outbound.sqlite_report_repository import SQLiteReportRepository
-from .application.use_cases.assess_reports import AssessmentService
+from .application.performance_assessment import build_performance_assessment_service
 from .application.use_cases.import_reports import ReportInput, import_reports
 from .configs.application.local import load_local_config
 from .configs.gates.performance.performance_gate import load_performance_gate_config
 from .configs.llm.llm_config import load_llm_config
+from .domain.gates.performance.serialization import PERFORMANCE_DOMAIN_TYPES
 from .domain.history import report_order
 from .harness.graph import build_graph
 from .harness.system.system_prompt import system_prompt
@@ -22,7 +23,10 @@ PERFORMANCE_CONFIG_PATH = Path("configs/gates/performance/performance_gate.yaml"
 
 def main() -> None:
     local_config = load_local_config(LOCAL_CONFIG_PATH)
-    report_repository = SQLiteReportRepository(local_config.system.db_path)
+    report_repository = SQLiteReportRepository(
+        local_config.system.db_path,
+        domain_types=PERFORMANCE_DOMAIN_TYPES,
+    )
 
     import_reports(
         [
@@ -36,8 +40,9 @@ def main() -> None:
     if not reports:
         raise ValueError("At least one stored report is required for chat")
     current_report = max(reports, key=report_order)
-    assessments = AssessmentService(
-        report_repository, load_performance_gate_config(PERFORMANCE_CONFIG_PATH)
+    assessments = build_performance_assessment_service(
+        report_repository,
+        load_performance_gate_config(PERFORMANCE_CONFIG_PATH),
     )
     assessments.prepare()
 

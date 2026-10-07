@@ -11,6 +11,7 @@ from langchain_core.tools import ToolException
 
 from src.adapters.outbound.html_report import HTMLReport
 from src.adapters.outbound.sqlite_report_repository import SQLiteReportRepository
+from src.application.performance_assessment import build_performance_assessment_service
 from src.application.use_cases.assess_reports import (
     AssessmentService,
     EvidenceUnavailableError,
@@ -19,14 +20,17 @@ from src.application.use_cases.compare_gate import ReportNotFoundError
 from src.application.use_cases.import_reports import ReportInput, import_reports
 from src.configs.gates.performance.performance_gate import PerformanceGateConfig
 from src.domain.assessment import (
-    METRICS,
     GateAcceptance,
     GateDefinition,
-    assess_performance,
     combine_outcomes,
 )
 from src.domain.deltas.performance_comparison import compare_performance_values
 from src.domain.gates.gate import Gate
+from src.domain.gates.performance.assessment import (
+    METRICS,
+    POLICY_VERSION,
+    assess_performance,
+)
 from src.domain.gates.performance.performance_gate import (
     MetricSummary,
     PerformanceGate,
@@ -36,6 +40,7 @@ from src.domain.gates.performance.performance_gate import (
     ThroughputMetric,
     TransactionPerformance,
 )
+from src.domain.gates.performance.serialization import PERFORMANCE_DOMAIN_TYPES
 from src.domain.report import Report
 from src.harness.tools.build_tools import build_tools
 
@@ -51,9 +56,23 @@ def config(threshold=0.8):
 
 
 def repository_for(test, path=":memory:"):
-    repository = SQLiteReportRepository(path)
+    repository = SQLiteReportRepository(path, domain_types=PERFORMANCE_DOMAIN_TYPES)
     test.addCleanup(repository.close)
     return repository
+
+
+def assessment_service(repository, gate_config=None, gate_definitions=None):
+    selected_config = gate_config or config()
+    if gate_definitions is None:
+        return build_performance_assessment_service(repository, selected_config)
+    return AssessmentService(
+        repository,
+        gate_definitions,
+        {
+            "performance": selected_config.model_dump(),
+            "policy_version": POLICY_VERSION,
+        },
+    )
 
 
 def explicit_gate(score=0.9):
@@ -206,7 +225,7 @@ class ImportTests(unittest.TestCase):
             self.ingestion,
             self.repository,
         )
-        service = AssessmentService(self.repository, config())
+        service = assessment_service(self.repository)
         service.prepare()
         stored = self.repository.list_reports()
         newer, older_report = stored
@@ -366,7 +385,7 @@ class AssessmentTests(unittest.TestCase):
 class EvidenceTests(unittest.TestCase):
     def setUp(self):
         self.repository = repository_for(self)
-        self.service = AssessmentService(self.repository, config())
+        self.service = assessment_service(self.repository)
 
     def add(self, score=0.9, time="08:00:00", extra_gate=False):
         result = report(explicit_gate(score), time)
@@ -374,6 +393,23 @@ class EvidenceTests(unittest.TestCase):
             result.gates.append(Gate())
         self.repository.save(result)
         return result
+
+    def test_generic_service_runs_without_performance_configuration(self):
+        current = report(Gate())
+        self.repository.save(current)
+        assessor = Mock(return_value=GateAcceptance("pass"))
+        service = AssessmentService(
+            self.repository,
+            [GateDefinition(Gate, assessor, lambda *_: {}, "generic-v1")],
+            {"policy": "generic"},
+        )
+
+        service.prepare()
+
+        pack = service.get_evidence(current.report_id)
+        self.assertEqual(pack.outcome, "pass")
+        self.assertEqual(pack.configuration["policy"], "generic")
+        assessor.assert_called_once_with(current.gates[0])
 
     def test_first_pass_establishes_baseline_and_failed_report_does_not_advance_it(
         self,
@@ -426,10 +462,9 @@ class EvidenceTests(unittest.TestCase):
                 GateAcceptance("pass"),
             ]
         )
-        service = AssessmentService(
+        service = assessment_service(
             self.repository,
-            config(),
-            [
+            gate_definitions=[
                 base_definition,
                 GateDefinition(Gate, other_assessor, lambda *_: {}, "test-gate-v1"),
             ],
@@ -450,7 +485,7 @@ class EvidenceTests(unittest.TestCase):
             repository = repository_for(self, path)
             current = report()
             repository.save(current)
-            service = AssessmentService(repository, config())
+            service = assessment_service(repository)
             service.prepare()
             reopened = repository_for(self, path)
             self.assertEqual(
@@ -486,7 +521,7 @@ class EvidenceTests(unittest.TestCase):
         current = self.add(0.95, "09:00:00")
         self.service.prepare()
         original = self.service.get_evidence(current.report_id)
-        changed = AssessmentService(self.repository, config(0.9))
+        changed = assessment_service(self.repository, config(0.9))
         changed.prepare()
         revised = changed.get_evidence(current.report_id)
         self.assertNotEqual(original.assessment_version, revised.assessment_version)
@@ -522,7 +557,7 @@ class EvidenceTests(unittest.TestCase):
                     gates=gates,
                 )
             )
-            service = AssessmentService(repository, config())
+            service = assessment_service(repository)
             service.prepare()
             self.assertEqual(
                 service.get_evidence(repository.list_reports()[0].report_id).outcome,
@@ -575,7 +610,7 @@ class EvidenceToolTests(unittest.TestCase):
         self.repository = repository_for(self)
         self.current = report()
         self.repository.save(self.current)
-        self.service = AssessmentService(self.repository, config())
+        self.service = assessment_service(self.repository)
         self.service.prepare()
         tools = build_tools(self.service)
         self.assertEqual(
@@ -603,7 +638,7 @@ class EvidenceToolTests(unittest.TestCase):
         )
         current = report(gate)
         repository.save(current)
-        service = AssessmentService(repository, config())
+        service = assessment_service(repository)
         service.prepare()
         tool = build_tools(service)[1]
         result = json.loads(tool.invoke({"report_id": str(current.report_id)}))
@@ -655,7 +690,7 @@ class RealReportFlowTests(unittest.TestCase):
             ),
         ]
         first, current = import_reports(inputs, HTMLReport(), repository)
-        service = AssessmentService(repository, config())
+        service = assessment_service(repository)
         service.prepare()
         self.assertEqual(service.get_evidence(first.report_id).outcome, "pass")
         pack = service.get_evidence(current.report_id)
