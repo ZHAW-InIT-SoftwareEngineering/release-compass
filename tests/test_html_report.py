@@ -1,24 +1,31 @@
 import tempfile
 import unittest
 from pathlib import Path
+from uuid import UUID
 
 from src.adapters.outbound.html_report import HTMLReport
+from src.domain.gates.performance.performance_gate import PerformanceGate
 
-
-REPORT = Path(__file__).resolve().parents[1] / "data/raw/reports/example_reports/report.html"
+REPORT = (
+    Path(__file__).resolve().parents[1] / "data/raw/reports/example_reports/report.html"
+)
 
 
 class HTMLReportTests(unittest.TestCase):
     def test_ingests_performance_metrics_from_example_report(self):
         result = HTMLReport().ingest(REPORT)
 
-        self.assertEqual(result.report_id, str(REPORT))
-        response_time = result.response_time
-        outcomes = result.request_outcomes
-        throughput = result.throughput
-        cpu = result.cpu
-        memory = result.memory
-        transaction_throughput = result.transactions["Login"].throughput
+        self.assertIsInstance(result.report_id, UUID)
+        self.assertEqual(result.source_path, str(REPORT))
+        self.assertEqual(len(result.gates), 1)
+        performance = result.gates[0]
+        assert isinstance(performance, PerformanceGate)
+        response_time = performance.response_time
+        outcomes = performance.request_outcomes
+        throughput = performance.throughput
+        cpu = performance.cpu
+        memory = performance.memory
+        transaction_throughput = performance.transactions["Login"].throughput
         assert response_time is not None
         assert outcomes is not None
         assert throughput is not None
@@ -38,12 +45,12 @@ class HTMLReportTests(unittest.TestCase):
         self.assertEqual(outcomes.http_code_histogram["404"], 1777)
         self.assertEqual(throughput.unit, "req/s")
         self.assertEqual(throughput.assessment.status, 1)
-        self.assertEqual(result.transactions["Login"].nfr_status, 2)
+        self.assertEqual(performance.transactions["Login"].nfr_status, 2)
         self.assertEqual(transaction_throughput.target_nfr, 2)
         self.assertEqual(cpu.summary.unit, "cores")
         self.assertEqual(memory.summary.unit, "bytes")
-        self.assertEqual(len(result.cpu_components), 4)
-        self.assertEqual(len(result.memory_components), 4)
+        self.assertEqual(len(performance.cpu_components), 4)
+        self.assertEqual(len(performance.memory_components), 4)
         self.assertIsNotNone(cpu.summary.start_time)
 
     def test_rejects_html_without_embedded_report_data(self):

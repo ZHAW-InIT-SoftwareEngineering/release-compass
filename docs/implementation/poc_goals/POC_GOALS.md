@@ -54,6 +54,19 @@ snapshots, and supports tracing one hop back through the report history. Each
 gate's baseline source report is included even when it differs from the
 report-level baseline.
 
+Acceptance follows the provider assessment mapping and weighted source
+aggregation in [ADR 0007](../../adrs/0007_use_provider_performance_assessments.md).
+Explicit per-metric provider scores take precedence; otherwise supplied
+penalties become scores through `1 - penalty` and are evaluated against gate
+configuration. Acceptance does not depend on having a prior passing baseline.
+Missing required assessments remain unknown rather than passing.
+
+The enriched report also identifies its immediately preceding chronological
+report and evidence pack, independently of passing baselines. A root has a
+null predecessor and `is_root: true`. Each immutable pack belongs to an
+assessment/configuration version. Full supporting series remain persisted;
+tool responses expose summary evidence and pack/path references to series.
+
 The deterministic analysis layer creates this pack. The LLM may explain its
 contents but must not calculate metrics, choose a different baseline, or
 decide whether a gate or release passes.
@@ -85,6 +98,19 @@ and returns a structured evidence pack. A separately callable
 `get_performance_evidence(run_id)` remains a proposed convenience tool, not a
 required POC capability; `compare_performance` already returns the evidence
 needed for an explanation.
+
+The implementation names the UUID argument `report_id` and also exposes
+`get_previous_report(report_id)`. The latter returns the previous enriched
+report in chronological order, including failed/unknown reports, or an
+explicit history-end result.
+
+## Incremental local import
+
+HTML content hashes identify repeat imports, which reuse stored report IDs and
+timestamps without reparsing. Changed content creates a new report. Initial
+imports are processed chronologically; later backdated sources are rejected
+atomically. Timestamp precedence is HTML, configuration, then first-import UTC.
+See [ADR 0008](../../adrs/0008_incremental_import_and_history.md).
 
 ## Open decisions and explicit non-goals
 

@@ -19,6 +19,15 @@ Assess each gate independently using that gate's configured assessment rules
 and its own gate baseline. Record the gate result and the evidence used to
 reach it.
 
+Acceptance uses absolute configured rules and does not require a prior
+baseline. Baseline comparison explains changes; it does not determine
+acceptance. Outcomes are explicitly `pass`, `fail`, or `unknown`. A known
+failure takes precedence over unknown evidence; otherwise a missing,
+duplicate, unsupported, or indeterminate required gate prevents a pass.
+
+Performance scoring follows the provider assessments and weighted aggregation
+recorded in [ADR 0007](0007_use_provider_performance_assessments.md).
+
 Assess the report's release result separately. A report passes only when every
 gate in it has an explicit passing result. A gate that is missing or has no
 determinate passing result does not satisfy this condition.

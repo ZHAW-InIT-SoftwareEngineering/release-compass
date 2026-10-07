@@ -198,6 +198,82 @@ class HTMLReport:
         data = json.loads("".join(parser.chunks))
         apm = data["aggregatorSummary"]["metrics"]["apm"]
         performance_gate = PerformanceGate()
+        score = data["aggregatorSummary"].get("overall_score", {})
+        transaction_health = score.get("transaction_health", {})
+        infrastructure = score.get("infrastructure_health", {})
+        performance_gate.provider_assessments = {
+            "statuses": data.get("dictionnaries", {}).get("statuses", {}),
+            "performance_gate": data["aggregatorSummary"].get("performance_gate"),
+            "nfr_compliance": score.get("nfr_compliance", {}),
+            "transaction_health": {
+                "weights": {
+                    key: value
+                    for key, value in transaction_health.get("weights", {}).items()
+                    if key in ("status", "transaction_aggregation")
+                },
+                "per_transaction": {
+                    name: {
+                        **{
+                            key: item[key]
+                            for key in (
+                                "transaction_weight",
+                                "transaction_weight_source",
+                                "zero_observation",
+                                "all_observations_failed",
+                                "reason",
+                            )
+                            if key in item
+                        },
+                        "components": {
+                            key: value
+                            for key, value in item.get("components", {}).items()
+                            if key
+                            in (
+                                "local_nfr",
+                                "local_nfr_reason",
+                                "local_nfr_details",
+                                "failure_transactions_rate",
+                                "failed_transactions",
+                            )
+                        },
+                    }
+                    for name, item in transaction_health.get(
+                        "per_transaction", {}
+                    ).items()
+                },
+            },
+            "infrastructure_health": {
+                "rule_based_metrics_weights": infrastructure.get("weights", {})
+                .get("components", {})
+                .get("rule_based_metrics_weights", {}),
+                "per_node": {
+                    name: {
+                        **{
+                            key: item[key]
+                            for key in (
+                                "node_weight",
+                                "node_weight_source",
+                                "zero_observation",
+                            )
+                            if key in item
+                        },
+                        "metrics_components": {
+                            metric: {"local_nfr": assessment.get("local_nfr")}
+                            for metric, assessment in item.get(
+                                "metrics_components", {}
+                            ).items()
+                            if metric in ("cpu", "memory")
+                        },
+                    }
+                    for name, item in infrastructure.get("per_node", {}).items()
+                },
+            },
+            "provider_overall": {
+                key: score[key]
+                for key in ("overall_score", "passing_score", "passing", "weights")
+                if key in score
+            },
+        }
         performance_gate.response_time = _response_time(
             apm["response_time"], apm["response_time"].get("timeseries") or ()
         )

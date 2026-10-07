@@ -51,6 +51,16 @@ If no previously passing item of the required kind is available, the item
 cannot be marked as passing on the basis of a baseline comparison. A report
 with any gate that is not explicitly passing does not pass.
 
+Absolute acceptance still runs when no baseline exists. The first qualifying
+gate/report establishes its respective baseline for later reports. Missing
+baselines are represented by null identifiers with an unavailable-comparison
+reason, rather than a fabricated seed.
+
+Chronological predecessor links are separate from passing-baseline links.
+They include failed and unknown reports and terminate at a null predecessor
+with `is_root: true`. See [ADR 0008](0008_incremental_import_and_history.md)
+for import identity, rejection of backdated additions, and versioned history.
+
 This POC policy replaces the earlier proposal to use the previous compatible
 run or an average. The combined generated-at timestamp is authoritative for
 ordering; ingestion order is used only to break ties. Other baseline policies

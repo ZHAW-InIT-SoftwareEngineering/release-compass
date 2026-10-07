@@ -45,6 +45,17 @@ most recently recorded passing report for a release comparison. See
 [ADR 0005](../../adrs/0005_separate_gate_and_report_acceptance.md) and
 [ADR 0006](../../adrs/0006_use_last_passed_gate_and_report_as_baselines.md).
 
+Absolute acceptance is independent of baseline availability. Performance uses
+supplied provider assessments and weights; gate configuration determines
+acceptance thresholds. [ADR 0007](../../adrs/0007_use_provider_performance_assessments.md)
+records the metric mappings.
+
+Application use cases import only unseen HTML fingerprints and prepare
+versioned, immutable evidence. Chronological predecessor links are separate
+from passing baselines; `get_previous_report(report_id)` traverses enriched
+reports to a root. Initial imports are sorted and subsequent backdated imports
+are rejected. See [ADR 0008](../../adrs/0008_incremental_import_and_history.md).
+
 ## Metric-independent gate contract
 
 Each gate is an implementation of the deterministic-analysis boundary. A gate

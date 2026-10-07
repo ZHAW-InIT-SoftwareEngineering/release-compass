@@ -1,63 +1,34 @@
-Needed tools w.r.t to the paper @docs/papers/initial_paper_david.pdf:
+# POC tools
 
-After Reading in full detail the paper I feel that I miss context s.t. I can fully determine the tools needed for this.
-This because I have no idea about DevOps at all. What I need is input from David about what metrics the devs are currently using to take and then also evaluate the deceision about a new release.
+Both tools are bound by the host to one assessment/configuration version.
+The LLM supplies string report UUIDs; services validate them and return
+persisted deterministic evidence. Historical discussion remains in
+[the discussion record](../discussions/01_discussions.md).
 
-Missing Context: 
+## compare_performance(report_id)
 
-Data for metrics (always): 
-Time Series
+Returns the report's enriched evidence pack: current and independently selected
+passing report/gate baselines, acceptance results, metric values and unit-aware
+deltas, thresholds, provenance, supporting evidence, and chronological
+predecessor/root references. The model cannot provide a different baseline.
+Acceptance can pass without a baseline; comparison is then unavailable.
 
-& the assesment of these TS data from like ML, ... models
+## get_previous_report(report_id)
 
-Open Questions: 
+Returns `{report_id, history_end, previous_report}`. The predecessor contains
+its enriched evidence pack under the same assessment version. Failed and
+unknown reports are included. Calling this tool on the root returns
+`history_end: true` and `previous_report: null`.
 
-1. How do we make the agent specialized at the quality gate level? 
+Full time series and bucket/window collections are retained in SQLite;
+tool responses reference these by evidence-pack ID and structured path.
+HTTP histograms, assessments, weights, and exclusions remain in the
+explanation-facing result. Long violation-period lists include the first eight
+periods and a full stored-evidence reference.
 
-Quality Gate: 
-1. Peformance 
-    - logging
-    - fetch friend
+Invalid UUIDs, absent reports, and unavailable assessments produce expected
+tool errors. Unexpected storage/corruption failures propagate. The internal
+explicit-ID comparison remains available for deterministic application callers.
 
-
-2. Functional Suitability
-
-3. Build Quality
-
-4. many more tbd on => focus on 1. and 2. for now
-
-
-I need to know what metrics they observe currently for: 
-1. current state of the system: 
-    - metrics, logs, ...
-
-2. how do they determine the trustworthyness of the evidence? 
-    - like missing data, bad tests, ...
-
-3. What is the baseline?
-    - CA must (!) answer how the release will perfom compared to previous ones
-
-4. How do they determine whether requirements are satisfied? 
-
-
-In general I would be happy to see a master sample workflow of a DevOps process s.t. I see what the people are observing, analyzing, interpreting and in general how the decision making is done currently
-
-
-Gained Context aka DevOps insights (from David): 
-
-
-
-After gathering the information to understand the context better: 
-
-Bascially derrived from the 3 agent sdefined in the proposed architecture:
-1. Decision explanation Agent:
-    -  
-    - 
-
-**Summary**
-
-For the POC: 
-1. get_performance_evidence(run_id)
-2. compare_performance(run_id_A, run_id_B)
-
-as discussed in: [Tool Decision File](../discussions/01_discussions.md)
+See [ADR 0007](../../adrs/0007_use_provider_performance_assessments.md) and
+[ADR 0008](../../adrs/0008_incremental_import_and_history.md).

@@ -11,3 +11,6 @@ class Report:
     generated_at_date: str | None = None
     generated_at_time: str | None = None
     gates: list[Gate] = field(default_factory=list)
+    source_fingerprint: str | None = None
+    ingestion_sequence: int | None = None
+    source_paths: list[str] = field(default_factory=list)
