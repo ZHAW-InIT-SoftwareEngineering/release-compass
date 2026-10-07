@@ -23,16 +23,12 @@ For the POC, select baselines as follows:
 - A report uses the latest prior report that passed, meaning every gate in
   that report passed, ordered by `generated_at_date` and `generated_at_time`.
 
-The two fields together form a UTC timestamp. When an HTML report supplies
-`generated_at_date` and `generated_at_time`, ingestion preserves those values.
-Until reports supply them, the import configuration provides the date and time
-for each report. If neither source provides them, ingestion assigns the
-current UTC date and time when the report is first stored. Re-ingesting the
-same report must preserve the originally stored values. Reports are ordered by this combined timestamp;
-ingestion order breaks ties when timestamps are equal. The application must
-preserve ingestion order to resolve ties deterministically. A report without
-a complete generated-at date and time is not eligible for automatic baseline
-selection and cannot have an automatic baseline selected for it.
+The two fields together form a UTC timestamp. Timestamp source precedence and
+validation are defined in [ADR 0009](0009_require_complete_report_timestamps.md).
+Re-ingesting the same report preserves its original values. Reports are
+ordered by this combined timestamp; ingestion order breaks ties when
+timestamps are equal. The application must preserve ingestion order to resolve
+ties deterministically.
 
 Candidates must precede the current item in this report order. The baseline
 is the eligible passing candidate with the greatest combined timestamp (and

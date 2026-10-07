@@ -49,3 +49,16 @@ reasons alongside the original metric summaries and supporting evidence.
 Assessment versions include the project configuration and interpretation-policy
 version. Changed configuration/policy creates new immutable evidence packs;
 earlier results remain available.
+
+## Alternatives
+
+- **Recompute scores from raw metric values.** Rejected because that would
+  recreate provider-specific calculations and could disagree with the
+  assessments already supplied in the report.
+- **Use the provider's global release score as project acceptance.** Rejected
+  because it includes signals outside the Performance gate policy. Preserve it
+  as provenance while applying project thresholds to the six metric results.
+- **Average categorical statuses or substitute a score when evidence is
+  missing.** Rejected because status codes are categories and missing evidence
+  cannot establish a pass. Preserve provider weights and return `unknown` when
+  included sources cannot be evaluated.

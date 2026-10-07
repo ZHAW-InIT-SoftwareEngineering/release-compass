@@ -14,8 +14,9 @@ source report. Identical bytes reuse the stored UUID, generated-at fields, and
 ingestion sequence, including after renaming. Record source-path aliases.
 Changed bytes are a new source report.
 
-Use complete HTML timestamps first, complete configured timestamps second,
-and first-import UTC time otherwise. Reject partial timestamps. Order by
+Use complete HTML timestamps first and complete configured timestamps second.
+Reject partial timestamps and reports with no complete timestamp from either
+source. Order by
 generated-at UTC timestamp and persistent ingestion sequence; configured order
 breaks ties within a new batch. Sort the initial batch chronologically.
 
@@ -53,3 +54,16 @@ One report is sufficient to assess acceptance and start chat, even without a
 passing baseline. Report history includes nonpassing reports independently of
 baseline history. Changing acceptance configuration rebuilds history under a
 new version without editing previously stored packs. No new package is needed.
+
+## Alternatives
+
+- **Identify reports by path or modification time.** Rejected because renames
+  and filesystem metadata do not reliably indicate content identity; hash the
+  HTML bytes so identical content reuses its report.
+- **Accept backdated additions and rebuild the existing order.** Rejected
+  because that would change established predecessor and baseline links;
+  validate a batch atomically and reject new reports older than stored history.
+- **Embed the full prior history in every pack or let the model select a
+  baseline.** Rejected because recursive packs duplicate history and model
+  selection is nondeterministic; persist shallow references and select
+  baselines in the assessment service.
