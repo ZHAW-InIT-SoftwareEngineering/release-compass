@@ -7,7 +7,7 @@ from src.adapters.outbound.html_report import HTMLReport
 from src.domain.gates.performance.performance_gate import PerformanceGate
 
 REPORT = (
-    Path(__file__).resolve().parents[1] / "data/raw/reports/example_reports/report.html"
+    Path(__file__).resolve().parents[3] / "data/raw/reports/example_reports/report.html"
 )
 
 

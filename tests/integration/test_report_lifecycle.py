@@ -177,16 +177,10 @@ class ImportTests(unittest.TestCase):
         result = import_reports(self.inputs(), self.ingestion, self.repository)[0]
         self.assertEqual(result.generated_at_time, "10:00:00")
 
-    def test_timestamp_fallback_is_complete_and_stable(self):
-        result = import_reports(
-            [ReportInput(self.path)], self.ingestion, self.repository
-        )[0]
-        self.assertIsNotNone(result.generated_at_date)
-        self.assertIsNotNone(result.generated_at_time)
-        again = import_reports(
-            [ReportInput(self.path)], self.ingestion, self.repository
-        )[0]
-        self.assertEqual(again.generated_at_time, result.generated_at_time)
+    def test_missing_html_and_config_timestamp_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "no complete generated-at"):
+            import_reports([ReportInput(self.path)], self.ingestion, self.repository)
+        self.assertEqual(self.repository.list_reports(), [])
 
     def test_rejects_partial_source_or_config_timestamp(self):
         self.ingestion.ingest.side_effect = lambda _: Report(
