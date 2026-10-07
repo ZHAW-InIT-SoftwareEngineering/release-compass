@@ -12,7 +12,7 @@ from .configs.llm.llm_config import load_llm_config
 from .domain.history import report_order
 from .harness.graph import build_graph
 from .harness.system.system_prompt import system_prompt
-from .harness.tools.compare_performance import build_performance_tools
+from .harness.tools.build_tools import build_tools
 from .llm.llm import init_llm
 
 LLM_CONFIG_PATH = Path("configs/llm/openrouter.yaml")
@@ -43,7 +43,7 @@ def main() -> None:
 
     llm_config = load_llm_config(LLM_CONFIG_PATH)
     llm = init_llm(llm_config)
-    tools = build_performance_tools(assessments)
+    tools = build_tools(assessments)
     model_with_tools = llm.bind_tools(tools)
     graph = build_graph(model_with_tools, tools)
 

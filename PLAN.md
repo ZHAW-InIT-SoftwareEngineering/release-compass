@@ -15,7 +15,7 @@ Process reports chronologically. Assess gates from their own evidence and config
 
 - Identify source reports by **SHA-256 of the HTML bytes**. An existing fingerprint reuses its report UUID and stored timestamps without reparsing or rewriting the report. Changed content creates a new report.
 - Preserve the original source path and record additional paths encountered for identical content.
-- Timestamp precedence: complete HTML timestamp, complete configured timestamp, then UTC time at first import. Reject partially supplied timestamp pairs.
+- Timestamp precedence: complete HTML timestamp, then complete configured timestamp. Reject partially supplied timestamp pairs and reports lacking a complete timestamp from either source.
 - Persist an ingestion sequence. Order reports by `(generated_at UTC timestamp, ingestion sequence)`, preserving configured order for timestamp ties.
 - Sort new imports before processing. Reject a new report whose timestamp precedes the latest stored report; validate the entire batch before writing. Identical-content imports remain valid regardless of configuration changes.
 - Allow one stored report: acceptance can run without a baseline. Remove the two-report minimum.

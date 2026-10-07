@@ -7,7 +7,7 @@ from langchain.messages import AIMessage, HumanMessage
 from src.domain.gates.performance.performance_gate import PerformanceGate
 from src.domain.report import Report
 from src.harness.graph import build_graph
-from src.harness.tools.compare_performance import build_compare_gate_tool
+from src.harness.tools.gate_tools import build_compare_gate_tool
 
 
 class ToolErrorTests(unittest.TestCase):

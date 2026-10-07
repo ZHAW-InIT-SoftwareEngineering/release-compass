@@ -37,7 +37,7 @@ from src.domain.gates.performance.performance_gate import (
     TransactionPerformance,
 )
 from src.domain.report import Report
-from src.harness.tools.compare_performance import build_performance_tools
+from src.harness.tools.build_tools import build_tools
 
 
 def config(threshold=0.8):
@@ -577,7 +577,12 @@ class EvidenceToolTests(unittest.TestCase):
         self.repository.save(self.current)
         self.service = AssessmentService(self.repository, config())
         self.service.prepare()
-        self.compare, self.previous = build_performance_tools(self.service)
+        tools = build_tools(self.service)
+        self.assertEqual(
+            [tool.name for tool in tools],
+            ["compare_gate", "compare_performance", "get_previous_report"],
+        )
+        self.gate_compare, self.compare, self.previous = tools
 
     def test_tools_return_evidence_and_root_without_model_selected_baseline(self):
         arguments = {"report_id": str(self.current.report_id)}
@@ -600,7 +605,7 @@ class EvidenceToolTests(unittest.TestCase):
         repository.save(current)
         service = AssessmentService(repository, config())
         service.prepare()
-        tool = build_performance_tools(service)[0]
+        tool = build_tools(service)[1]
         result = json.loads(tool.invoke({"report_id": str(current.report_id)}))
         series = result["snapshots"][str(current.report_id)]["report"]["gates"][0][
             "response_time"

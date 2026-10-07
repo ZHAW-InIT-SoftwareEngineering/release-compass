@@ -109,7 +109,8 @@ explicit history-end result.
 HTML content hashes identify repeat imports, which reuse stored report IDs and
 timestamps without reparsing. Changed content creates a new report. Initial
 imports are processed chronologically; later backdated sources are rejected
-atomically. Timestamp precedence is HTML, configuration, then first-import UTC.
+atomically. Timestamp precedence is HTML, then configuration; reject reports
+that lack a complete timestamp from both sources.
 See [ADR 0008](../../adrs/0008_incremental_import_and_history.md).
 
 ## Open decisions and explicit non-goals
