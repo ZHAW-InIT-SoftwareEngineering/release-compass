@@ -1,6 +1,9 @@
 from pathlib import Path
+from uuid import uuid4
 
 from langchain.messages import AnyMessage, HumanMessage, SystemMessage
+from langchain_core.runnables import RunnableConfig
+from langgraph.checkpoint.memory import MemorySaver
 
 from src.adapters.outbound.html_report import HTMLReport
 from src.adapters.outbound.sqlite_report_repository import SQLiteReportRepository
@@ -50,9 +53,13 @@ def main() -> None:
     llm_config = load_llm_config(LLM_CONFIG_PATH)
     llm = init_llm(llm_config)
     tools = build_tools(assessments)
-    tools = tools.append(cicd_tool)
+    tools.append(cicd_tool)
     model_with_tools = llm.bind_tools(tools)
-    graph = build_graph(model_with_tools, tools)
+
+    checkpointer = MemorySaver()
+
+    graph = build_graph(model_with_tools, tools, checkpointer)
+    config: RunnableConfig = {"configurable": {"thread_id": str(uuid4())}}
 
     SYSTEM_PROMPT = system_prompt(current_report)
     messages: list[AnyMessage] = [SystemMessage(content=SYSTEM_PROMPT)]
@@ -67,7 +74,8 @@ def main() -> None:
                 {
                     "messages": [*messages, HumanMessage(content=user_input)],
                     "approved_cicd": False,
-                }
+                },
+                config=config,
             )
             messages = response["messages"]
             print(f"Assistant: {messages[-1].content}")

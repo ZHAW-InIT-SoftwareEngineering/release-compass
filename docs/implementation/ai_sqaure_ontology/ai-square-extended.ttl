@@ -1,0 +1,1565 @@
+@prefix : <https://ai-square.ch/ai2core#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix ai2core: <https://ai-square.ch/ai2core#> .
+@base <https://ai-square.ch/ai2core#> .
+
+<https://ai-square.ch/ai2core> rdf:type owl:Ontology ;
+                                owl:versionInfo "v2" .
+
+#################################################################
+#    Object Properties
+#################################################################
+
+
+###  https://ai-square.ch/ai2core#affects
+ai2core:affects rdf:type owl:ObjectProperty ;
+                rdfs:domain ai2core:Anomaly ;
+                rdfs:range ai2core:Observable ,
+                           ai2core:Source .
+
+
+###  https://ai-square.ch/ai2core#calls
+ai2core:calls rdf:type owl:ObjectProperty ;
+              rdfs:domain ai2core:Source ;
+              rdfs:range ai2core:Source .
+
+
+###  https://ai-square.ch/ai2core#causes
+ai2core:causes rdf:type owl:ObjectProperty .
+
+
+###  https://ai-square.ch/ai2core#depend_on
+ai2core:depend_on rdf:type owl:ObjectProperty ;
+                  rdfs:domain ai2core:Source ;
+                  rdfs:range ai2core:Source .
+
+
+###  https://ai-square.ch/ai2core#detected_by
+ai2core:detected_by rdf:type owl:ObjectProperty ;
+                    rdfs:domain ai2core:Anomaly ;
+                    rdfs:range ai2core:Model .
+
+
+###  https://ai-square.ch/ai2core#evaluated_by
+ai2core:evaluated_by rdf:type owl:ObjectProperty .
+
+
+###  https://ai-square.ch/ai2core#evaluates
+ai2core:evaluates rdf:type owl:ObjectProperty ;
+                  rdfs:domain ai2core:QualityGate ;
+                  rdfs:range ai2core:QualityGateExecution .
+
+
+###  https://ai-square.ch/ai2core#precedes
+ai2core:precedes rdf:type owl:ObjectProperty ;
+                 rdfs:domain ai2core:QualityGate ;
+                 rdfs:range ai2core:QualityGate .
+
+
+###  https://ai-square.ch/ai2core#produce
+ai2core:produce rdf:type owl:ObjectProperty ;
+                rdfs:domain ai2core:QualityGateExecution ;
+                rdfs:range ai2core:Observable .
+
+###  https://ai-square.ch/ai2core#produces
+ai2core:produces rdf:type owl:ObjectProperty ;
+                rdfs:domain ai2core:QualityGateExecution ;
+                rdfs:range ai2core:Observable .
+
+
+###  https://ai-square.ch/ai2core#produces_metric
+ai2core:produces_metric rdf:type owl:ObjectProperty ;
+                rdfs:domain ai2core:QualityGateExecution ;
+                rdfs:range ai2core:Metric .
+
+
+###  https://ai-square.ch/ai2core#produces_log
+ai2core:produces_log rdf:type owl:ObjectProperty ;
+                rdfs:domain ai2core:QualityGateExecution ;
+                rdfs:range ai2core:Log .
+
+
+###  https://ai-square.ch/ai2core#produces_test_case
+ai2core:produces_test_case rdf:type owl:ObjectProperty ;
+                rdfs:domain ai2core:QualityGateExecution ;
+                rdfs:range ai2core:TestCase .
+
+###  https://ai-square.ch/ai2core#produces_anomaly
+ai2core:produces_anomaly rdf:type owl:ObjectProperty ;
+                rdfs:domain ai2core:QualityGateExecution ;
+                rdfs:range ai2core:Anomaly .
+
+###  https://ai-square.ch/ai2core#stages_to
+ai2core:stages_to rdf:type owl:ObjectProperty ;
+                  rdfs:domain ai2core:Environment ;
+                  rdfs:range ai2core:Environment .
+
+
+###  https://ai-square.ch/ai2core#yield_from
+ai2core:yield_from rdf:type owl:ObjectProperty ;
+                   rdfs:domain ai2core:Observable ;
+                   rdfs:range ai2core:Source .
+
+
+### https://ai-square.ch/ai2core#evaluated_by
+ai2core:evaluated_by rdf:type owl:ObjectProperty ;
+                    rdfs:domain ai2core:QualityGate ;
+                    rdfs:range ai2core:Requirement .
+
+
+### https://ai-square.ch/ai2core#contains_target
+ai2core:contains_target rdf:type owl:ObjectProperty ;
+                    rdfs:domain ai2core:Requirement ;
+                    rdfs:range ai2core:Target .
+
+
+### https://ai-square.ch/ai2core#evaluates
+ai2core:evaluates rdf:type owl:ObjectProperty ;
+                    rdfs:domain ai2core:TestCase ;
+                    rdfs:range ai2core:Requirement .
+
+
+
+###  https://ai-square.ch/ai2core#linked_requirement
+ai2core:linked_requirement rdf:type owl:ObjectProperty ;
+                  rdfs:domain ai2core:Requirement ;
+                  rdfs:range ai2core:Requirement .
+
+###  https://ai-square.ch/ai2core#verifying_test_case
+ai2core:verifying_test_case rdf:type owl:ObjectProperty ;
+                  rdfs:domain ai2core:Requirement ;
+                  rdfs:range ai2core:TestCase .
+
+###  https://ai-square.ch/ai2core#has_capability
+ai2core:has_capability rdf:type owl:ObjectProperty ;
+                  rdfs:domain ai2core:Requirement ;
+                  rdfs:range ai2core:Capability .
+
+###  https://ai-square.ch/ai2core#has_coverage
+ai2core:has_coverage rdf:type owl:ObjectProperty ;
+                  rdfs:domain ai2core:Capability ;
+                  rdfs:range ai2core:CapabilityCoverage .
+
+###  https://ai-square.ch/ai2core#tests
+ai2core:tests rdf:type owl:ObjectProperty ;
+                  rdfs:domain ai2core:CapabilityCoverage ;
+                  rdfs:range ai2core:TestCase .
+
+###  https://ai-square.ch/ai2core#includes
+ai2core:includes rdf:type owl:ObjectProperty ;
+                  rdfs:domain ai2core:TestCase ;
+                  rdfs:range ai2core:Action .
+
+###  https://ai-square.ch/ai2core#extracted_by
+ai2core:extracted_by rdf:type owl:ObjectProperty ;
+                  rdfs:domain ai2core:Capability ;
+                  rdfs:range ai2core:Model .
+
+###  https://ai-square.ch/ai2core#specifies
+ai2core:specifies rdf:type owl:ObjectProperty ;
+                  rdfs:domain ai2core:RequirementSpecification ;
+                  rdfs:range ai2core:Requirement .
+
+
+###  https://ai-square.ch/ai2core#specifies
+ai2core:specifies rdf:type owl:ObjectProperty ;
+                  rdfs:domain ai2core:TestCaseSpecification ;
+                  rdfs:range ai2core:TestCase .
+
+
+###  https://ai-square.ch/ai2core#specifies
+ai2core:specifies rdf:type owl:ObjectProperty ;
+                  rdfs:domain ai2core:SourceSpecification ;
+                  rdfs:range ai2core:Source .
+
+
+###  https://ai-square.ch/ai2core#specifies_requirement
+ai2core:specifies_requirement rdf:type owl:ObjectProperty ;
+                  rdfs:domain ai2core:RequirementSpecification ;
+                  rdfs:range ai2core:Requirement .
+
+###  https://ai-square.ch/ai2core#specifies_test_case
+ai2core:specifies_test_case rdf:type owl:ObjectProperty ;
+                  rdfs:domain ai2core:TestCaseSpecification ;
+                  rdfs:range ai2core:TestCase .
+
+### https://ai-square.ch/ai2core#evaluated_by_requirement
+ai2core:evaluated_by_requirement rdf:type owl:ObjectProperty ;
+                    rdfs:domain ai2core:QualityGate ;
+                    rdfs:range ai2core:Requirement .
+
+### https://ai-square.ch/ai2core#evaluates_requirement
+ai2core:evaluates_requirement rdf:type owl:ObjectProperty ;
+                    rdfs:domain ai2core:TestCase ;
+                    rdfs:range ai2core:Requirement .
+
+
+###  https://ai-square.ch/ai2core#affects_source
+ai2core:affects_source rdf:type owl:ObjectProperty ;
+                rdfs:domain ai2core:Anomaly ;
+                rdfs:range ai2core:Observable ,
+                           ai2core:Source .
+
+
+###  https://ai-square.ch/ai2core#produce_reqspec
+ai2core:produce_reqspec rdf:type owl:ObjectProperty ;
+                rdfs:domain ai2core:QualityGateExecution ;
+                rdfs:range ai2core:RequirementSpecification .
+
+#################################################################
+#    Data properties
+#################################################################
+
+###  https://ai-square.ch/ai2core#aggregation
+ai2core:aggregation rdf:type owl:DatatypeProperty ;
+                    rdfs:domain ai2core:Target ;
+                    rdfs:range xsd:string .
+
+
+###  https://ai-square.ch/ai2core#end_time
+ai2core:end_time rdf:type owl:DatatypeProperty ;
+                 rdfs:domain ai2core:Anomaly ,
+                             ai2core:Descriptive ;
+                 rdfs:range xsd:dateTimeStamp .
+
+
+###  https://ai-square.ch/ai2core#has_id
+ai2core:has_id rdf:type owl:DatatypeProperty ;
+               rdfs:domain owl:Thing ;
+               rdfs:range xsd:string .
+
+
+###  https://ai-square.ch/ai2core#severity
+ai2core:severity rdf:type owl:DatatypeProperty ;
+                 rdfs:domain ai2core:Anomaly ;
+                 rdfs:range xsd:string .
+
+
+###  https://ai-square.ch/ai2core#start_time
+ai2core:start_time rdf:type owl:DatatypeProperty ;
+                   rdfs:domain ai2core:Anomaly ,
+                               ai2core:Descriptive ;
+                   rdfs:range xsd:dateTimeStamp .
+
+
+###  https://ai-square.ch/ai2core#status
+ai2core:status rdf:type owl:DatatypeProperty ;
+               rdfs:domain ai2core:Log ;
+               rdfs:range xsd:string .
+
+
+###  https://ai-square.ch/ai2core#units
+ai2core:units rdf:type owl:DatatypeProperty ;
+              rdfs:domain ai2core:Metric ,
+                          ai2core:Target ;
+              rdfs:range xsd:string .
+
+
+###  https://ai-square.ch/ai2core#created_on
+ai2core:created_on rdf:type owl:DatatypeProperty ;
+                   rdfs:domain ai2core:Requirement ;
+                   rdfs:range xsd:integer .
+
+###  https://ai-square.ch/ai2core#last_modified_on
+ai2core:last_modified_on rdf:type owl:DatatypeProperty ;
+                         rdfs:domain ai2core:Requirement ;
+                         rdfs:range xsd:integer .
+
+
+###  https://ai-square.ch/ai2core#criticality
+ai2core:criticality rdf:type owl:DatatypeProperty ;
+                    rdfs:domain ai2core:Requirement ;
+                    rdfs:range xsd:string .
+
+
+###  https://ai-square.ch/ai2core#remote_url
+ai2core:remote_url rdf:type owl:DatatypeProperty ;
+                   rdfs:domain ai2core:Requirement ,
+                               ai2core:Action ;
+                   rdfs:range xsd:anyURI .
+
+
+###  https://ai-square.ch/ai2core#description
+ai2core:description rdf:type owl:DatatypeProperty ;
+                    rdfs:domain ai2core:Capability ;
+                    rdfs:range xsd:string .
+
+
+###  https://ai-square.ch/ai2core#confidence
+ai2core:confidence rdf:type owl:DatatypeProperty ;
+                   rdfs:domain ai2core:Capability ,
+                               ai2core:CapabilityCoverage ;
+                   rdfs:range xsd:string .
+
+
+###  https://ai-square.ch/ai2core#coverage
+ai2core:coverage rdf:type owl:DatatypeProperty ;
+                 rdfs:domain ai2core:Capability ;
+                 rdfs:range xsd:boolean .
+
+
+###  https://ai-square.ch/ai2core#covers_step
+# The identifier of an action the coverage was evidenced by, kept as a literal so a
+# coverage link still names exactly one test case. It is the has_id of the action node
+# the test case mapping writes, which is what a query joins on.
+ai2core:covers_step rdf:type owl:DatatypeProperty ;
+                    rdfs:domain ai2core:CapabilityCoverage ;
+                    rdfs:range xsd:string .
+
+
+###  https://ai-square.ch/ai2core#reason
+ai2core:reason rdf:type owl:DatatypeProperty ;
+               rdfs:domain ai2core:CapabilityCoverage ,
+                           ai2core:Capability ;
+               rdfs:range xsd:string .
+
+
+###  https://ai-square.ch/ai2core#extracted_on
+ai2core:extracted_on rdf:type owl:DatatypeProperty ;
+                     rdfs:domain ai2core:Capability ;
+                     rdfs:range xsd:long ;
+                     rdfs:comment "When the language model extracted the capability, in ms since epoch." .
+
+
+###  https://ai-square.ch/ai2core#version
+ai2core:version rdf:type owl:DatatypeProperty ;
+                rdfs:domain ai2core:Model ;
+                rdfs:range xsd:string .
+
+
+#################################################################
+#    Classes
+#################################################################
+
+
+###  https://ai-square.ch/ai2core#Anomaly
+ai2core:Anomaly rdf:type owl:Class ;
+                rdfs:subClassOf ai2core:Observable ;
+                rdfs:comment "A deviation from expected behaviour or a violation of a defined requirement, detected within an observable (e.g., a metric, log, or trace)." .
+
+
+###  https://ai-square.ch/ai2core#Descriptive
+ai2core:Descriptive rdf:type owl:Class ;
+                    rdfs:comment "Refers to statistical measures that summarize and quantify the observed behavior of an observable, such as averages, percentiles, minima, and maxima, without inferring causes or predicting future behavior." .
+
+
+###  https://ai-square.ch/ai2core#Environment
+ai2core:Environment rdf:type owl:Class ;
+                    rdfs:comment "A configured context—comprising both hardware and software—where a specific version of an application is built, tested, or executed. Also referred to as a stage or phase (e.g., development, testing, staging, production)." .
+
+
+###  https://ai-square.ch/ai2core#Log
+ai2core:Log rdf:type owl:Class ;
+            rdfs:subClassOf ai2core:Observable ;
+            rdfs:comment "A type of observability data that associates a timestamp with a textual message, typically including a log level (e.g., INFO, ERROR) and optionally an error or status code." .
+
+
+
+###  https://ai-square.ch/ai2core#Metric
+ai2core:Metric rdf:type owl:Class ;
+               rdfs:subClassOf ai2core:Observable ;
+               rdfs:comment "A type of observability data (or observable) that associates a timestamp with a numeric value and its unit of measurement (e.g., latency in milliseconds, memory usage in MB)" .
+
+
+###  https://ai-square.ch/ai2core#TestResult
+ai2core:TestResult rdf:type owl:Class ;
+              rdfs:subClassOf ai2core:Observable ;
+              rdfs:comment "A type of observability data representing Test results (i.e., pass or fail)@en." .
+
+
+###  https://ai-square.ch/ai2core#TestCase
+ai2core:TestCase rdf:type owl:Class ;
+              rdfs:subClassOf ai2core:Source ;
+              rdfs:comment "A type of source data representing Test case (i.e., or the source where test cases are stored)@en." .
+
+###  https://ai-square.ch/ai2core#TestCaseSpecification
+ai2core:TestCaseSpecification rdf:type owl:Class .
+
+
+###  https://ai-square.ch/ai2core#Model
+ai2core:Model rdf:type owl:Class .
+
+
+###  https://ai-square.ch/ai2core#Observable
+ai2core:Observable rdf:type owl:Class ;
+                   rdfs:comment "Any type of data that can be collected to monitor and assess the behavior of a system. It provides insight into the system's performance, functionality, or state and helps detect issues or anomalies. Observables include metrics, logs, and traces, which each provide different kinds of data related to the system's operation." .
+
+
+###  https://ai-square.ch/ai2core#QualityGate
+ai2core:QualityGate rdf:type owl:Class .
+
+
+###  https://ai-square.ch/ai2core#QualityGateExecution
+ai2core:QualityGateExecution rdf:type owl:Class ;
+                             rdfs:comment "It is a decision checkpoint in the software delivery process that evaluates whether a software artefact meets a predefined set of quality criteria. It aggregates multiple test results and static analysis checks to determine if the software can move to the next stage (e.g., deployment, release)." .
+
+
+###  https://ai-square.ch/ai2core#Requirement
+ai2core:Requirement rdf:type owl:Class ;
+                    rdfs:comment "It is a specific measurable condition or capability that a project, environment, quality gate, or observable must satisfy to meet stakeholder needs, fulfil business goals, or comply with standards. Typically defines a pass/fail criterion that must be met, such as performance thresholds, functional correctness, or security constraints." .
+
+###  https://ai-square.ch/ai2core#RequirementSpecification
+ai2core:RequirementSpecification rdf:type owl:Class .
+
+
+###  https://ai-square.ch/ai2core#Capability
+ai2core:Capability rdf:type owl:Class ;
+                   rdfs:comment "An observable behaviour implied by a requirement, extracted by a language model. A Capability is an inference about what a requirement demands, not a fact recorded in the source tool; its provenance is given by ai2core:detected_by." .
+
+
+###  https://ai-square.ch/ai2core#CapabilityCoverage
+ai2core:CapabilityCoverage rdf:type owl:Class ;
+                           rdfs:comment "Reified link between a Capability and the TestCase or Action that exercises it, carrying the per-link confidence and the reason the model gave for the association." .
+
+
+###  https://ai-square.ch/ai2core#Action
+ai2core:Action rdf:type owl:Class ;
+               rdfs:comment "A single step of a test case: one thing the tester or the automation does, together with the outcome it expects. Identified by the source_path of the step in the tool it comes from; the step text itself stays in the Resource DB and is reachable through ai2core:remote_url." .
+
+###  https://ai-square.ch/ai2core#Source
+ai2core:Source rdf:type owl:Class ;
+               rdfs:comment "A software or hardware component that produces observables (e.g., an application, service, database, transaction, server, pod, cluster, server, or sensor)." .
+
+###  https://ai-square.ch/ai2core#SourceSpecification
+ai2core:SourceSpecification rdf:type owl:Class .
+
+
+###  https://ai-square.ch/ai2core#Target
+ai2core:Target rdf:type owl:Class ;
+               rdfs:subClassOf ai2core:Requirement ;
+               rdfs:comment "It is a requirement that involves a metric. It contains an aggregation and reference a group of requirements by an ID." .
+
+
+###  https://ai-square.ch/ai2core#Trace
+ai2core:Trace rdf:type owl:Class ;
+              rdfs:subClassOf ai2core:Observable ;
+              rdfs:comment "A type of observability data representing distributed traces, capturing the execution flow across sources (i.e., components or services) in a system." .
+
+
+
+#################################################################
+#    Log Types
+#################################################################
+
+###  https://ai-square.ch/ai2log#log.access
+<https://ai-square.ch/ai2log#log.access> rdf:type owl:Class ;
+                                         rdfs:subClassOf ai2core:Log ;
+                                         rdfs:comment "Logs capturing HTTP/API access (e.g., request URI, status codes, IPs)" ;
+                                         rdfs:label "log.access" .
+
+
+###  https://ai-square.ch/ai2log#log.application
+<https://ai-square.ch/ai2log#log.application> rdf:type owl:Class ;
+                                              rdfs:subClassOf ai2core:Log ;
+                                              rdfs:comment "Logs generated by application logic (e.g., info, warning, error messages)"@en ;
+                                              rdfs:label "log.application" .
+
+
+###  https://ai-square.ch/ai2log#log.audit
+<https://ai-square.ch/ai2log#log.audit> rdf:type owl:Class ;
+                                        rdfs:subClassOf ai2core:Log ;
+                                        rdfs:comment "Logs recording user or system actions for traceability and compliance"@en ;
+                                        rdfs:label "log.audit" .
+
+
+###  https://ai-square.ch/ai2log#log.database
+<https://ai-square.ch/ai2log#log.database> rdf:type owl:Class ;
+                                           rdfs:subClassOf ai2core:Log ;
+                                           rdfs:comment "Logs from database systems (e.g., queries, slow logs, connection errors)" ;
+                                           rdfs:label "log.database" .
+
+
+###  https://ai-square.ch/ai2log#log.deployment
+<https://ai-square.ch/ai2log#log.deployment> rdf:type owl:Class ;
+                                             rdfs:subClassOf ai2core:Log ;
+                                             rdfs:comment "Logs from CI/CD pipelines, deployments, or build tools" ;
+                                             rdfs:label "log.deployment" .
+
+
+###  https://ai-square.ch/ai2log#log.infrastructure
+<https://ai-square.ch/ai2log#log.infrastructure> rdf:type owl:Class ;
+                                                 rdfs:subClassOf ai2core:Log ;
+                                                 rdfs:comment "Logs from infrastructure components like Docker, Kubernetes, or proxies" ;
+                                                 rdfs:label "log.infrastructure" .
+
+
+###  https://ai-square.ch/ai2log#log.network
+<https://ai-square.ch/ai2log#log.network> rdf:type owl:Class ;
+                                          rdfs:subClassOf ai2core:Log ;
+                                          rdfs:comment "Logs related to network activity, connections, DNS, or firewalls" ;
+                                          rdfs:label "log.network" .
+
+
+###  https://ai-square.ch/ai2log#log.performance
+<https://ai-square.ch/ai2log#log.performance> rdf:type owl:Class ;
+                                              rdfs:subClassOf ai2core:Log ;
+                                              rdfs:comment "Logs related to performance monitoring or latency events" ;
+                                              rdfs:label "log.performance" .
+
+
+###  https://ai-square.ch/ai2log#log.security
+<https://ai-square.ch/ai2log#log.security> rdf:type owl:Class ;
+                                           rdfs:subClassOf ai2core:Log ;
+                                           rdfs:comment "Logs related to authentication, authorization failures, or threat detection" ;
+                                           rdfs:label "log.security" .
+
+
+###  https://ai-square.ch/ai2log#log.system
+<https://ai-square.ch/ai2log#log.system> rdf:type owl:Class ;
+                                         rdfs:subClassOf ai2core:Log ;
+                                         rdfs:comment "Operating system or runtime logs (e.g., memory, kernel, OS events)" ;
+                                         rdfs:label "log.system" .
+
+
+###  https://ai-square.ch/ai2log#log.test
+<https://ai-square.ch/ai2log#log.test> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:Log ;
+                                       rdfs:comment "Logs produced during automated or manual test execution"@en ;
+                                       rdfs:label "log.test" .
+
+###  https://ai-square.ch/ai2log#log.test.error
+<https://ai-square.ch/ai2log#log.test.error> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:Log ;
+                                       rdfs:comment "Error logs produced during automated or manual test execution"@en ;
+                                       rdfs:label "log.test.error" .
+
+                            
+###  https://ai-square.ch/ai2log#log.test.warning
+<https://ai-square.ch/ai2log#log.test.warning> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:Log ;
+                                       rdfs:comment "Warning logs produced during automated or manual test execution"@en ;
+                                       rdfs:label "log.test.warning" .
+
+
+###  https://ai-square.ch/ai2log#log.test.debug
+<https://ai-square.ch/ai2log#log.test.debug> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:Log ;
+                                       rdfs:comment "Debug logs produced during automated or manual test execution"@en ;
+                                       rdfs:label "log.test.debug" .
+
+
+###  https://ai-square.ch/ai2log#log.test.info
+<https://ai-square.ch/ai2log#log.test.info> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:Log ;
+                                       rdfs:comment "Info logs produced during automated or manual test execution"@en ;
+                                       rdfs:label "log.test.info" .
+
+
+
+#################################################################
+#    Metric Types
+#################################################################
+
+###  https://ai-square.ch/ai2apm#metric.http.load
+<https://ai-square.ch/ai2apm#metric.http.load> rdf:type owl:Class ;
+                                               rdfs:subClassOf ai2core:Metric ;
+                                               rdfs:comment "Measures the number of active or ongoing HTTP requests being handled by the application or service at a given moment"@en ;
+                                               rdfs:label "metric.http.load" .
+
+
+###  https://ai-square.ch/ai2apm#metric.http.response_time
+<https://ai-square.ch/ai2apm#metric.http.response_time> rdf:type owl:Class ;
+                                                        rdfs:subClassOf ai2core:Metric ;
+                                                        rdfs:comment "Time taken to respond to an HTTP request"@en ;
+                                                        rdfs:label "metric.http.response_time" .
+
+
+###  https://ai-square.ch/ai2apm#metric.jvm.memory.used
+<https://ai-square.ch/ai2apm#metric.jvm.memory.used> rdf:type owl:Class ;
+                                                     rdfs:subClassOf ai2core:Metric ;
+                                                     rdfs:comment "Amount of memory currently used by the JVM (in bytes)"@en ;
+                                                     rdfs:label "metric.jvm.memory.used" .
+
+
+###  https://ai-square.ch/ai2apm#metric.page.size
+<https://ai-square.ch/ai2apm#metric.page.size> rdf:type owl:Class ;
+                                               rdfs:subClassOf ai2core:Metric ;
+                                               rdfs:comment "Size of the loaded page or response body"@en ;
+                                               rdfs:label "metric.page.size" .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance
+<https://ai-square.ch/ai2apm#metric.performance> rdf:type owl:Class ;
+                                                 rdfs:subClassOf ai2core:Metric ;
+                                                 rdfs:comment "Performance metrics are used to assess the performance relative to the amount of resources used under stated conditions. Sources can include other software, the software and hardware configuration of the system, and materials. The performance metrics are affected strongly and fluctuates depending on the conditions of use, such as load of processing data, frequency of use, number of connecting sites and so on. Therefore, performance efficiency measures might include the ratio of estimated or measured value with error fluctuation to the designed value with allowed error fluctuation range required by specification."@en ;
+                                                 rdfs:label "metric.performance"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.capacity
+<https://ai-square.ch/ai2apm#metric.performance.capacity> rdf:type owl:Class ;
+                                                          rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance> ;
+                                                          rdfs:comment "Capacity metrics are used to assess the degree to which the maximum limits of a product or system parameter meet the requirements"@en ;
+                                                          rdfs:label "metric.performance.capacity"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.capacity.request
+<https://ai-square.ch/ai2apm#metric.performance.capacity.request> rdf:type owl:Class ;
+                                                                  rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.capacity> ;
+                                                                  rdfs:comment "These metrics correspond to request and capacity. A request can represent a job, a function call, an HTTP request, or a database transaction."@en ;
+                                                                  rdfs:label "metric.performance.capacity.request"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.capacity.request.fail_rate
+<https://ai-square.ch/ai2apm#metric.performance.capacity.request.fail_rate> rdf:type owl:Class ;
+                                                                            rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.capacity.request> ;
+                                                                            rdfs:comment "The rate of failed requests"@en ;
+                                                                            rdfs:label "metric.performance.capacity.request.fail_rate"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.capacity.request.load
+<https://ai-square.ch/ai2apm#metric.performance.capacity.request.load> rdf:type owl:Class ;
+                                                                       rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.capacity.request> ;
+                                                                       rdfs:comment "Measures the number of active or ongoing requests being handled by the application or service at a given moment"@en ;
+                                                                       rdfs:label "metric.performance.capacity.request.load"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.capacity.request.rate
+<https://ai-square.ch/ai2apm#metric.performance.capacity.request.rate> rdf:type owl:Class ;
+                                                                       rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.capacity.request> ;
+                                                                       rdfs:comment "How many total requests generated in a period of time"@en ;
+                                                                       rdfs:label "metric.performance.capacity.request.rate"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.capacity.request.success_rate
+<https://ai-square.ch/ai2apm#metric.performance.capacity.request.success_rate> rdf:type owl:Class ;
+                                                                               rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.capacity.request> ;
+                                                                               rdfs:comment "The rate of success requests"@en ;
+                                                                               rdfs:label "metric.performance.capacity.request.success_rate"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.capacity.user
+<https://ai-square.ch/ai2apm#metric.performance.capacity.user> rdf:type owl:Class ;
+                                                               rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.capacity> ;
+                                                               rdfs:comment "These metrics correspond to users and capacity. This metrics indicates the degree to which the capability of software or system to have enough capacity to accept accesses/requests from connections, consumers, providers, devices, and machines, (i.e., users)."@en ;
+                                                               rdfs:label "metric.performance.capacity.user"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.capacity.user.count
+<https://ai-square.ch/ai2apm#metric.performance.capacity.user.count> rdf:type owl:Class ;
+                                                                     rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.capacity.user> ;
+                                                                     rdfs:comment "Current number of active users in a certain timestamp"@en ;
+                                                                     rdfs:label "metric.performance.capacity.user.count"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru
+<https://ai-square.ch/ai2apm#metric.performance.ru> rdf:type owl:Class ;
+                                                    rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance> ;
+                                                    rdfs:comment "Resource utilization metrics are used to assess the degree to which the amounts and types of resources used by a product or system when performing its functions meet the requirements."@en ;
+                                                    rdfs:label "metric.performance.ru"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.sut
+<https://ai-square.ch/ai2apm#metric.performance.ru.sut> rdf:type owl:Class ;
+                                                        rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru> ;
+                                                        rdfs:comment "Resource utilization for the System Under Test (sut) are metrics that allow to observe the software system, component, service, or computational environment being evaluated during a test. A SUT can be a database, a process, a node, a cluster."@en ;
+                                                        rdfs:label "metric.performance.ru.sut"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.sut.cache_capacity
+<https://ai-square.ch/ai2apm#metric.performance.ru.sut.cache_capacity> rdf:type owl:Class ;
+                                                                       rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.sut> ;
+                                                                       rdfs:comment "Cache capacity (count or bytes)"@en ;
+                                                                       rdfs:label "metric.performance.ru.sut.cache_capacity"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.sut.cache_hit_ratio
+<https://ai-square.ch/ai2apm#metric.performance.ru.sut.cache_hit_ratio> rdf:type owl:Class ;
+                                                                        rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.sut> ;
+                                                                        rdfs:comment "Ratio on which requests hit the cache compared to the number of requests"@en ;
+                                                                        rdfs:label "metric.performance.ru.sut.cache_hit_ratio"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.sut.cache_hits
+<https://ai-square.ch/ai2apm#metric.performance.ru.sut.cache_hits> rdf:type owl:Class ;
+                                                                   rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.sut> ;
+                                                                   rdfs:comment "Number of hits to the cache"@en ;
+                                                                   rdfs:label "metric.performance.ru.sut.cache_hits"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.sut.cache_miss_ratio
+<https://ai-square.ch/ai2apm#metric.performance.ru.sut.cache_miss_ratio> rdf:type owl:Class ;
+                                                                         rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.sut> ;
+                                                                         rdfs:comment "Ratio on which requests miss the cache compared to the number of requests"@en ;
+                                                                         rdfs:label "metric.performance.ru.sut.cache_miss_ratio"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.sut.cache_misses
+<https://ai-square.ch/ai2apm#metric.performance.ru.sut.cache_misses> rdf:type owl:Class ;
+                                                                     rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.sut> ;
+                                                                     rdfs:comment "Number of cache misses"@en ;
+                                                                     rdfs:label "metric.performance.ru.sut.cache_misses"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.sut.cache_usage
+<https://ai-square.ch/ai2apm#metric.performance.ru.sut.cache_usage> rdf:type owl:Class ;
+                                                                    rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.sut> ;
+                                                                    rdfs:comment "Percentage of cache used based on the capacity"@en ;
+                                                                    rdfs:label "metric.performance.ru.sut.cache_usage"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.sut.cpu_available
+<https://ai-square.ch/ai2apm#metric.performance.ru.sut.cpu_available> rdf:type owl:Class ;
+                                                                      rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.sut> ;
+                                                                      rdfs:comment "CPU currently available"@en ;
+                                                                      rdfs:label "metric.performance.ru.sut.cpu_available"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.sut.cpu_usage
+<https://ai-square.ch/ai2apm#metric.performance.ru.sut.cpu_usage> rdf:type owl:Class ;
+                                                                  rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.sut> ;
+                                                                  rdfs:comment "Percentage of CPU resources currently in use"@en ;
+                                                                  rdfs:label "metric.performance.ru.sut.cpu_usage"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.sut.disk_available
+<https://ai-square.ch/ai2apm#metric.performance.ru.sut.disk_available> rdf:type owl:Class ;
+                                                                       rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.sut> ;
+                                                                       rdfs:comment "Percentage of free space for a disk (or volume)"@en ;
+                                                                       rdfs:label "metric.performance.ru.sut.disk_available"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.sut.disk_io_rate
+<https://ai-square.ch/ai2apm#metric.performance.ru.sut.disk_io_rate> rdf:type owl:Class ;
+                                                                     rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.sut> ;
+                                                                     rdfs:comment "I/O usage rate in a given time from the disk (or volume)"@en ;
+                                                                     rdfs:label "metric.performance.ru.sut.disk_io_rate"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.sut.gc_collection_count
+<https://ai-square.ch/ai2apm#metric.performance.ru.sut.gc_collection_count> rdf:type owl:Class ;
+                                                                            rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.sut> ;
+                                                                            rdfs:comment "Garbage collector invocation count"@en ;
+                                                                            rdfs:label "metric.performance.ru.sut.gc_collection_count"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.sut.gc_collection_time
+<https://ai-square.ch/ai2apm#metric.performance.ru.sut.gc_collection_time> rdf:type owl:Class ;
+                                                                           rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.sut> ;
+                                                                           rdfs:comment "Garbage collection total collection time"@en ;
+                                                                           rdfs:label "metric.performance.ru.sut.gc_collection_time"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.sut.memory_available
+<https://ai-square.ch/ai2apm#metric.performance.ru.sut.memory_available> rdf:type owl:Class ;
+                                                                         rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.sut> ;
+                                                                         rdfs:comment "Memory (RAM) currently available"@en ;
+                                                                         rdfs:label "metric.performance.ru.sut.memory_available"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.sut.memory_heap_available
+<https://ai-square.ch/ai2apm#metric.performance.ru.sut.memory_heap_available> rdf:type owl:Class ;
+                                                                              rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.sut> ;
+                                                                              rdfs:comment "Amount of heap memory currently available on a certain timestamp"@en ;
+                                                                              rdfs:label "metric.performance.ru.sut.memory_heap_available"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.sut.memory_heap_used
+<https://ai-square.ch/ai2apm#metric.performance.ru.sut.memory_heap_used> rdf:type owl:Class ;
+                                                                         rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.sut> ;
+                                                                         rdfs:comment "Amount of heap memory currently used on a certain timestamp"@en ;
+                                                                         rdfs:label "metric.performance.ru.sut.memory_heap_used"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.sut.memory_usage
+<https://ai-square.ch/ai2apm#metric.performance.ru.sut.memory_usage> rdf:type owl:Class ;
+                                                                     rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.sut> ;
+                                                                     rdfs:comment "Percentage of memory (RAM) currently in use"@en ;
+                                                                     rdfs:label "metric.performance.ru.sut.memory_usage"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.sut.network_packet_received_rate
+<https://ai-square.ch/ai2apm#metric.performance.ru.sut.network_packet_received_rate> rdf:type owl:Class ;
+                                                                                     rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.sut> ;
+                                                                                     rdfs:comment "Rate of packets received per second in a certain timestamp"@en ;
+                                                                                     rdfs:label "metric.performance.ru.sut.network_packet_received_rate"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.sut.network_packet_retransmission_rate
+<https://ai-square.ch/ai2apm#metric.performance.ru.sut.network_packet_retransmission_rate> rdf:type owl:Class ;
+                                                                                           rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.sut> ;
+                                                                                           rdfs:comment "Rate of retransmitted packets at a certain point of time"@en ;
+                                                                                           rdfs:label "metric.performance.ru.sut.network_packet_retransmission_rate"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.sut.network_packet_sent_rate
+<https://ai-square.ch/ai2apm#metric.performance.ru.sut.network_packet_sent_rate> rdf:type owl:Class ;
+                                                                                 rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.sut> ;
+                                                                                 rdfs:comment "Rate of packets sent per second in a certain timestamp."@en ;
+                                                                                 rdfs:label "metric.performance.ru.sut.network_packet_sent_rate"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.sut.network_throughput
+<https://ai-square.ch/ai2apm#metric.performance.ru.sut.network_throughput> rdf:type owl:Class ;
+                                                                           rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.sut> ;
+                                                                           rdfs:comment "Used network bandwidth measured over time to perform a given set of tasks"@en ;
+                                                                           rdfs:label "metric.performance.ru.sut.network_throughput"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.sut.network_traffic_in
+<https://ai-square.ch/ai2apm#metric.performance.ru.sut.network_traffic_in> rdf:type owl:Class ;
+                                                                           rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.sut> ;
+                                                                           rdfs:comment "Incoming network traffic per second"@en ;
+                                                                           rdfs:label "metric.performance.ru.sut.network_traffic_in"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.sut.network_traffic_out
+<https://ai-square.ch/ai2apm#metric.performance.ru.sut.network_traffic_out> rdf:type owl:Class ;
+                                                                            rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.sut> ;
+                                                                            rdfs:comment "Outgoing network traffic per second"@en ;
+                                                                            rdfs:label "metric.performance.ru.sut.network_traffic_out"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.sut.node_active_count
+<https://ai-square.ch/ai2apm#metric.performance.ru.sut.node_active_count> rdf:type owl:Class ;
+                                                                          rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.sut> ;
+                                                                          rdfs:comment "Number of active nodes in a cluster"@en ;
+                                                                          rdfs:label "metric.performance.ru.sut.node_active_count"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.sut.node_restarts
+<https://ai-square.ch/ai2apm#metric.performance.ru.sut.node_restarts> rdf:type owl:Class ;
+                                                                      rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.sut> ;
+                                                                      rdfs:comment "Number of restarts per node in a cluster"@en ;
+                                                                      rdfs:label "metric.performance.ru.sut.node_restarts"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.sut.pool_active_count
+<https://ai-square.ch/ai2apm#metric.performance.ru.sut.pool_active_count> rdf:type owl:Class ;
+                                                                          rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.sut> ;
+                                                                          rdfs:comment "Number of pool active threads"@en ;
+                                                                          rdfs:label "metric.performance.ru.sut.pool_active_count"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.sut.pool_free_count
+<https://ai-square.ch/ai2apm#metric.performance.ru.sut.pool_free_count> rdf:type owl:Class ;
+                                                                        rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.sut> ;
+                                                                        rdfs:comment "Count of free pool items (e.g., threads or connections)"@en ;
+                                                                        rdfs:label "metric.performance.ru.sut.pool_free_count"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.sut.pool_size
+<https://ai-square.ch/ai2apm#metric.performance.ru.sut.pool_size> rdf:type owl:Class ;
+                                                                  rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.sut> ;
+                                                                  rdfs:comment "Total pool size (e.g., threads or connections)"@en ;
+                                                                  rdfs:label "metric.performance.ru.sut.pool_size"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.sut.pool_usage
+<https://ai-square.ch/ai2apm#metric.performance.ru.sut.pool_usage> rdf:type owl:Class ;
+                                                                   rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.sut> ;
+                                                                   rdfs:comment "Percentage of pool used"@en ;
+                                                                   rdfs:label "metric.performance.ru.sut.pool_usage"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.sut.pool_waiting_count
+<https://ai-square.ch/ai2apm#metric.performance.ru.sut.pool_waiting_count> rdf:type owl:Class ;
+                                                                           rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.sut> ;
+                                                                           rdfs:comment "Number of queued or threads waiting to be active"@en ;
+                                                                           rdfs:label "metric.performance.ru.sut.pool_waiting_count"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.te
+<https://ai-square.ch/ai2apm#metric.performance.ru.te> rdf:type owl:Class ;
+                                                        rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru> ;
+                                                        rdfs:comment "Resource utilization for the Testing Environment (te) are metrics that allow to observe all external systems, platforms, tools, infrastructure, and environmental factors that host, support, or interact with the SUT, but are not part of the SUT itself, such as load generators, clients, and traffic sources. The te represents everything around the SUT that enables, influences, or executes the test but is not the focus of measurement. TE has the same metric_ids as SUT, but replacing the prefix from sut to te, allowing to make the difference between both metrics."@en ;
+                                                        rdfs:label "metric.performance.ru.te"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.te.cache_capacity
+<https://ai-square.ch/ai2apm#metric.performance.ru.te.cache_capacity> rdf:type owl:Class ;
+                                                                       rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.te> ;
+                                                                       rdfs:comment "Cache capacity (count or bytes)"@en ;
+                                                                       rdfs:label "metric.performance.ru.te.cache_capacity"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.te.cache_hit_ratio
+<https://ai-square.ch/ai2apm#metric.performance.ru.te.cache_hit_ratio> rdf:type owl:Class ;
+                                                                        rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.te> ;
+                                                                        rdfs:comment "Ratio on which requests hit the cache compared to the number of requests"@en ;
+                                                                        rdfs:label "metric.performance.ru.te.cache_hit_ratio"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.te.cache_hits
+<https://ai-square.ch/ai2apm#metric.performance.ru.te.cache_hits> rdf:type owl:Class ;
+                                                                   rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.te> ;
+                                                                   rdfs:comment "Number of hits to the cache"@en ;
+                                                                   rdfs:label "metric.performance.ru.te.cache_hits"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.te.cache_miss_ratio
+<https://ai-square.ch/ai2apm#metric.performance.ru.te.cache_miss_ratio> rdf:type owl:Class ;
+                                                                         rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.te> ;
+                                                                         rdfs:comment "Ratio on which requests miss the cache compared to the number of requests"@en ;
+                                                                         rdfs:label "metric.performance.ru.te.cache_miss_ratio"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.te.cache_misses
+<https://ai-square.ch/ai2apm#metric.performance.ru.te.cache_misses> rdf:type owl:Class ;
+                                                                     rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.te> ;
+                                                                     rdfs:comment "Number of cache misses"@en ;
+                                                                     rdfs:label "metric.performance.ru.te.cache_misses"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.te.cache_usage
+<https://ai-square.ch/ai2apm#metric.performance.ru.te.cache_usage> rdf:type owl:Class ;
+                                                                    rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.te> ;
+                                                                    rdfs:comment "Percentage of cache used based on the capacity"@en ;
+                                                                    rdfs:label "metric.performance.ru.te.cache_usage"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.te.cpu_available
+<https://ai-square.ch/ai2apm#metric.performance.ru.te.cpu_available> rdf:type owl:Class ;
+                                                                      rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.te> ;
+                                                                      rdfs:comment "CPU currently available"@en ;
+                                                                      rdfs:label "metric.performance.ru.te.cpu_available"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.te.cpu_usage
+<https://ai-square.ch/ai2apm#metric.performance.ru.te.cpu_usage> rdf:type owl:Class ;
+                                                                  rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.te> ;
+                                                                  rdfs:comment "Percentage of CPU resources currently in use"@en ;
+                                                                  rdfs:label "metric.performance.ru.te.cpu_usage"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.te.disk_available
+<https://ai-square.ch/ai2apm#metric.performance.ru.te.disk_available> rdf:type owl:Class ;
+                                                                       rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.te> ;
+                                                                       rdfs:comment "Percentage of free space for a disk (or volume)"@en ;
+                                                                       rdfs:label "metric.performance.ru.te.disk_available"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.te.disk_io_rate
+<https://ai-square.ch/ai2apm#metric.performance.ru.te.disk_io_rate> rdf:type owl:Class ;
+                                                                     rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.te> ;
+                                                                     rdfs:comment "I/O usage rate in a given time from the disk (or volume)"@en ;
+                                                                     rdfs:label "metric.performance.ru.te.disk_io_rate"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.te.gc_collection_count
+<https://ai-square.ch/ai2apm#metric.performance.ru.te.gc_collection_count> rdf:type owl:Class ;
+                                                                            rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.te> ;
+                                                                            rdfs:comment "Garbage collector invocation count"@en ;
+                                                                            rdfs:label "metric.performance.ru.te.gc_collection_count"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.te.gc_collection_time
+<https://ai-square.ch/ai2apm#metric.performance.ru.te.gc_collection_time> rdf:type owl:Class ;
+                                                                           rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.te> ;
+                                                                           rdfs:comment "Garbage collection total collection time"@en ;
+                                                                           rdfs:label "metric.performance.ru.te.gc_collection_time"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.te.memory_available
+<https://ai-square.ch/ai2apm#metric.performance.ru.te.memory_available> rdf:type owl:Class ;
+                                                                         rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.te> ;
+                                                                         rdfs:comment "Memory (RAM) currently available"@en ;
+                                                                         rdfs:label "metric.performance.ru.te.memory_available"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.te.memory_heap_available
+<https://ai-square.ch/ai2apm#metric.performance.ru.te.memory_heap_available> rdf:type owl:Class ;
+                                                                              rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.te> ;
+                                                                              rdfs:comment "Amount of heap memory currently available on a certain timestamp"@en ;
+                                                                              rdfs:label "metric.performance.ru.te.memory_heap_available"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.te.memory_heap_used
+<https://ai-square.ch/ai2apm#metric.performance.ru.te.memory_heap_used> rdf:type owl:Class ;
+                                                                         rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.te> ;
+                                                                         rdfs:comment "Amount of heap memory currently used on a certain timestamp"@en ;
+                                                                         rdfs:label "metric.performance.ru.te.memory_heap_used"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.te.memory_usage
+<https://ai-square.ch/ai2apm#metric.performance.ru.te.memory_usage> rdf:type owl:Class ;
+                                                                     rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.te> ;
+                                                                     rdfs:comment "Percentage of memory (RAM) currently in use"@en ;
+                                                                     rdfs:label "metric.performance.ru.te.memory_usage"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.te.network_packet_received_rate
+<https://ai-square.ch/ai2apm#metric.performance.ru.te.network_packet_received_rate> rdf:type owl:Class ;
+                                                                                     rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.te> ;
+                                                                                     rdfs:comment "Rate of packets received per second in a certain timestamp"@en ;
+                                                                                     rdfs:label "metric.performance.ru.te.network_packet_received_rate"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.te.network_packet_retransmission_rate
+<https://ai-square.ch/ai2apm#metric.performance.ru.te.network_packet_retransmission_rate> rdf:type owl:Class ;
+                                                                                           rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.te> ;
+                                                                                           rdfs:comment "Rate of retransmitted packets at a certain point of time"@en ;
+                                                                                           rdfs:label "metric.performance.ru.te.network_packet_retransmission_rate"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.te.network_packet_sent_rate
+<https://ai-square.ch/ai2apm#metric.performance.ru.te.network_packet_sent_rate> rdf:type owl:Class ;
+                                                                                 rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.te> ;
+                                                                                 rdfs:comment "Rate of packets sent per second in a certain timestamp."@en ;
+                                                                                 rdfs:label "metric.performance.ru.te.network_packet_sent_rate"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.te.network_throughput
+<https://ai-square.ch/ai2apm#metric.performance.ru.te.network_throughput> rdf:type owl:Class ;
+                                                                           rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.te> ;
+                                                                           rdfs:comment "Used network bandwidth measured over time to perform a given set of tasks"@en ;
+                                                                           rdfs:label "metric.performance.ru.te.network_throughput"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.te.network_traffic_in
+<https://ai-square.ch/ai2apm#metric.performance.ru.te.network_traffic_in> rdf:type owl:Class ;
+                                                                           rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.te> ;
+                                                                           rdfs:comment "Incoming network traffic per second"@en ;
+                                                                           rdfs:label "metric.performance.ru.te.network_traffic_in"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.te.network_traffic_out
+<https://ai-square.ch/ai2apm#metric.performance.ru.te.network_traffic_out> rdf:type owl:Class ;
+                                                                            rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.te> ;
+                                                                            rdfs:comment "Outgoing network traffic per second"@en ;
+                                                                            rdfs:label "metric.performance.ru.te.network_traffic_out"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.te.node_active_count
+<https://ai-square.ch/ai2apm#metric.performance.ru.te.node_active_count> rdf:type owl:Class ;
+                                                                          rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.te> ;
+                                                                          rdfs:comment "Number of active nodes in a cluster"@en ;
+                                                                          rdfs:label "metric.performance.ru.te.node_active_count"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.te.node_restarts
+<https://ai-square.ch/ai2apm#metric.performance.ru.te.node_restarts> rdf:type owl:Class ;
+                                                                      rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.te> ;
+                                                                      rdfs:comment "Number of restarts per node in a cluster"@en ;
+                                                                      rdfs:label "metric.performance.ru.te.node_restarts"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.te.pool_active_count
+<https://ai-square.ch/ai2apm#metric.performance.ru.te.pool_active_count> rdf:type owl:Class ;
+                                                                          rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.te> ;
+                                                                          rdfs:comment "Number of pool active threads"@en ;
+                                                                          rdfs:label "metric.performance.ru.te.pool_active_count"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.te.pool_free_count
+<https://ai-square.ch/ai2apm#metric.performance.ru.te.pool_free_count> rdf:type owl:Class ;
+                                                                        rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.te> ;
+                                                                        rdfs:comment "Count of free pool items (e.g., threads or connections)"@en ;
+                                                                        rdfs:label "metric.performance.ru.te.pool_free_count"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.te.pool_size
+<https://ai-square.ch/ai2apm#metric.performance.ru.te.pool_size> rdf:type owl:Class ;
+                                                                  rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.te> ;
+                                                                  rdfs:comment "Total pool size (e.g., threads or connections)"@en ;
+                                                                  rdfs:label "metric.performance.ru.te.pool_size"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.te.pool_usage
+<https://ai-square.ch/ai2apm#metric.performance.ru.te.pool_usage> rdf:type owl:Class ;
+                                                                   rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.te> ;
+                                                                   rdfs:comment "Percentage of pool used"@en ;
+                                                                   rdfs:label "metric.performance.ru.te.pool_usage"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.ru.te.pool_waiting_count
+<https://ai-square.ch/ai2apm#metric.performance.ru.te.pool_waiting_count> rdf:type owl:Class ;
+                                                                           rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.ru.te> ;
+                                                                           rdfs:comment "Number of queued or threads waiting to be active"@en ;
+                                                                           rdfs:label "metric.performance.ru.te.pool_waiting_count"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.tb
+<https://ai-square.ch/ai2apm#metric.performance.tb> rdf:type owl:Class ;
+                                                    rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance> ;
+                                                    rdfs:comment "Time behavior metrics are used to assess the degree to which the response and processing times and throughput rates of a product or system when performing its functions meet the requirements"@en ;
+                                                    rdfs:label "metric.performance.tb"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.tb.request
+<https://ai-square.ch/ai2apm#metric.performance.tb.request> rdf:type owl:Class ;
+                                                            rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.tb> ;
+                                                            rdfs:comment "These metrics correspond to request and time behavior. A request can represent a job, a function call, an HTTP request, or a database transaction."@en ;
+                                                            rdfs:label "metric.performance.tb.request"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.tb.request.blocked_time
+<https://ai-square.ch/ai2apm#metric.performance.tb.request.blocked_time> rdf:type owl:Class ;
+                                                                         rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.tb.request> ;
+                                                                         rdfs:comment "Time spent blocked (e.g., waiting for a free TCP connection slot) before initiating the request"@en ;
+                                                                         rdfs:label "metric.performance.tb.request.blocked_time"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.tb.request.connect_time
+<https://ai-square.ch/ai2apm#metric.performance.tb.request.connect_time> rdf:type owl:Class ;
+                                                                         rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.tb.request> ;
+                                                                         rdfs:comment "Measures the time it took to establish the connection."@en ;
+                                                                         rdfs:label "metric.performance.tb.request.connect_time"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.tb.request.handshaking_time
+<https://ai-square.ch/ai2apm#metric.performance.tb.request.handshaking_time> rdf:type owl:Class ;
+                                                                             rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.tb.request> ;
+                                                                             rdfs:comment "Time spent handshaking with a remote host"@en ;
+                                                                             rdfs:label "metric.performance.tb.request.handshaking_time"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.tb.request.response_time
+<https://ai-square.ch/ai2apm#metric.performance.tb.request.response_time> rdf:type owl:Class ;
+                                                                          rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.tb.request> ;
+                                                                          rdfs:comment "Time taken to respond to a request."@en ;
+                                                                          rdfs:label "metric.performance.tb.request.response_time"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.tb.request.sending_time
+<https://ai-square.ch/ai2apm#metric.performance.tb.request.sending_time> rdf:type owl:Class ;
+                                                                         rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.tb.request> ;
+                                                                         rdfs:comment "Time spent sending a request's data to a source"@en ;
+                                                                         rdfs:label "metric.performance.tb.request.sending_time"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.tb.response
+<https://ai-square.ch/ai2apm#metric.performance.tb.response> rdf:type owl:Class ;
+                                                             rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.tb> ;
+                                                             rdfs:comment "These metrics correspond to response and time behavior. A response represents the result or outcome produced after processing a request; for example, the output of a job, the return value of a function, an HTTP response, or the result of a database transaction."@en ;
+                                                             rdfs:label "metric.performance.tb.response"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.tb.response.receiving_time
+<https://ai-square.ch/ai2apm#metric.performance.tb.response.receiving_time> rdf:type owl:Class ;
+                                                                            rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.tb.response> ;
+                                                                            rdfs:comment "Time spent receiving response data"@en ;
+                                                                            rdfs:label "metric.performance.tb.response.receiving_time"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.tb.response.ttfb
+<https://ai-square.ch/ai2apm#metric.performance.tb.response.ttfb> rdf:type owl:Class ;
+                                                                  rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.tb.response> ;
+                                                                  rdfs:comment "TTFB (Time to first byte)Time spent waiting for the first byte of the response"@en ;
+                                                                  rdfs:label "metric.performance.tb.response.ttfb"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.tb.ui
+<https://ai-square.ch/ai2apm#metric.performance.tb.ui> rdf:type owl:Class ;
+                                                       rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.tb> ;
+                                                       rdfs:comment "These metrics correspond to user interface and time behavior. A user interface represents an artefact that the user interact with: a page, a web page, a screen loaded into a mobile phone."@en ;
+                                                       rdfs:label "metric.performance.tb.ui"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.tb.ui.blocking_time
+<https://ai-square.ch/ai2apm#metric.performance.tb.ui.blocking_time> rdf:type owl:Class ;
+                                                                     rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.tb.ui> ;
+                                                                     rdfs:comment "Time from since the first contentful paint where the main thread was blocked for long enough to prevent user input responsiveness."@en ;
+                                                                     rdfs:label "metric.performance.tb.ui.blocking_time"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.tb.ui.first_contentful_paint_time
+<https://ai-square.ch/ai2apm#metric.performance.tb.ui.first_contentful_paint_time> rdf:type owl:Class ;
+                                                                                   rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.tb.ui> ;
+                                                                                   rdfs:comment "Time from when the first content is rendered on the user interface "@en ;
+                                                                                   rdfs:label "metric.performance.tb.ui.first_contentful_paint_time"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.tb.ui.largest_contentful_paint_time
+<https://ai-square.ch/ai2apm#metric.performance.tb.ui.largest_contentful_paint_time> rdf:type owl:Class ;
+                                                                                     rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.tb.ui> ;
+                                                                                     rdfs:comment "Time from when the largest user interface element (e.g., image, text block, or video) is visible in the user interface relative to when he user interface start loading."@en ;
+                                                                                     rdfs:label "metric.performance.tb.ui.largest_contentful_paint_time"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.performance.tb.ui.speed_index
+<https://ai-square.ch/ai2apm#metric.performance.tb.ui.speed_index> rdf:type owl:Class ;
+                                                                   rdfs:subClassOf <https://ai-square.ch/ai2apm#metric.performance.tb.ui> ;
+                                                                   rdfs:comment "Measures how quickly content is visually displayed during page load"@en ;
+                                                                   rdfs:label "metric.performance.tb.ui.speed_index"@en .
+
+
+###  https://ai-square.ch/ai2apm#metric.system.cpu.usage
+<https://ai-square.ch/ai2apm#metric.system.cpu.usage> rdf:type owl:Class ;
+                                                      rdfs:subClassOf ai2core:Metric ;
+                                                      rdfs:comment "Percentage of CPU resources currently in use"@en ;
+                                                      rdfs:label "metric.system.cpu.usage" .
+
+
+###  https://ai-square.ch/ai2apm#metric.system.memory.usage
+<https://ai-square.ch/ai2apm#metric.system.memory.usage> rdf:type owl:Class ;
+                                                         rdfs:subClassOf ai2core:Metric ;
+                                                         rdfs:comment "Percentage of system memory currently in use"@en ;
+                                                         rdfs:label "metric.system.memory.usage" .
+
+
+
+#################################################################
+#    Test Result Types
+#################################################################
+
+###  https://ai-square.ch/ai2trs#test_result.test_suite
+<https://ai-square.ch/ai2trs#test_result.test_suite> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestResult ;
+                                       rdfs:comment "Aggregated test result produced from  tests for the test_suite."@en ;
+                                       rdfs:label "test_result.test_suite" .
+
+
+###  https://ai-square.ch/ai2trs#test_result.test_case
+<https://ai-square.ch/ai2trs#test_result.test_case> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestResult ;
+                                       rdfs:comment "Aggregated test result produced from  tests for the test_case."@en ;
+                                       rdfs:label "test_result.test_case" .
+
+
+###  https://ai-square.ch/ai2trs#test_result.test_step
+<https://ai-square.ch/ai2trs#test_result.test_step> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestResult ;
+                                       rdfs:comment "Aggregated test result produced from tests for the test_step."@en ;
+                                       rdfs:label "test_result.test_step" .
+
+
+
+###  https://ai-square.ch/ai2trs#test_result.test_suite.unit
+<https://ai-square.ch/ai2trs#test_result.test_suite.unit> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestResult ;
+                                       rdfs:comment "Aggregated test result produced from unit tests for the test_suite."@en ;
+                                       rdfs:label "test_result.test_suite.unit" .
+
+###  https://ai-square.ch/ai2trs#test_result.test_suite.e2e
+<https://ai-square.ch/ai2trs#test_result.test_suite.e2e> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestResult ;
+                                       rdfs:comment "Aggregated test result produced from e2e tests for the test_suite."@en ;
+                                       rdfs:label "test_result.test_suite.e2e" .
+
+###  https://ai-square.ch/ai2trs#test_result.test_suite.component
+<https://ai-square.ch/ai2trs#test_result.test_suite.component> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestResult ;
+                                       rdfs:comment "Aggregated test result produced from component tests for the test_suite."@en ;
+                                       rdfs:label "test_result.test_suite.component" .
+
+###  https://ai-square.ch/ai2trs#test_result.test_suite.integration
+<https://ai-square.ch/ai2trs#test_result.test_suite.integration> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestResult ;
+                                       rdfs:comment "Aggregated test result produced from integration tests for the test_suite."@en ;
+                                       rdfs:label "test_result.test_suite.integration" .
+
+###  https://ai-square.ch/ai2trs#test_result.test_suite.api
+<https://ai-square.ch/ai2trs#test_result.test_suite.api> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestResult ;
+                                       rdfs:comment "Aggregated test result produced from api tests for the test_suite."@en ;
+                                       rdfs:label "test_result.test_suite.api" .
+
+###  https://ai-square.ch/ai2trs#test_result.test_suite.ui
+<https://ai-square.ch/ai2trs#test_result.test_suite.ui> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestResult ;
+                                       rdfs:comment "Aggregated test result produced from UI tests for the test_suite."@en ;
+                                       rdfs:label "test_result.test_suite.ui" .
+
+
+###  https://ai-square.ch/ai2trs#test_result.test_case.unit
+<https://ai-square.ch/ai2trs#test_result.test_case.unit> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestResult ;
+                                       rdfs:comment "Aggregated test result produced from unit tests for the test_case."@en ;
+                                       rdfs:label "test_result.test_case.unit" .
+
+###  https://ai-square.ch/ai2trs#test_result.test_case.e2e
+<https://ai-square.ch/ai2trs#test_result.test_case.e2e> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestResult ;
+                                       rdfs:comment "Aggregated test result produced from e2e tests for the test_case."@en ;
+                                       rdfs:label "test_result.test_case.e2e" .
+
+###  https://ai-square.ch/ai2trs#test_result.test_case.component
+<https://ai-square.ch/ai2trs#test_result.test_case.component> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestResult ;
+                                       rdfs:comment "Aggregated test result produced from component tests for the test_case."@en ;
+                                       rdfs:label "test_result.test_case.component" .
+
+###  https://ai-square.ch/ai2trs#test_result.test_case.integration
+<https://ai-square.ch/ai2trs#test_result.test_case.integration> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestResult ;
+                                       rdfs:comment "Aggregated test result produced from integration tests for the test_case."@en ;
+                                       rdfs:label "test_result.test_case.integration" .
+
+###  https://ai-square.ch/ai2trs#test_result.test_case.api
+<https://ai-square.ch/ai2trs#test_result.test_case.api> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestResult ;
+                                       rdfs:comment "Aggregated test result produced from api tests for the test_case."@en ;
+                                       rdfs:label "test_result.test_case.api" .
+
+###  https://ai-square.ch/ai2trs#test_result.test_case.ui
+<https://ai-square.ch/ai2trs#test_result.test_case.ui> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestResult ;
+                                       rdfs:comment "Aggregated test result produced from UI tests for the test_case."@en ;
+                                       rdfs:label "test_result.test_case.ui" .
+
+
+###  https://ai-square.ch/ai2trs#test_result.test_step.unit
+<https://ai-square.ch/ai2trs#test_result.test_step.unit> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestResult ;
+                                       rdfs:comment "Test result produced from unit tests for the test_step."@en ;
+                                       rdfs:label "test_result.test_step.unit" .
+
+###  https://ai-square.ch/ai2trs#test_result.test_step.e2e
+<https://ai-square.ch/ai2trs#test_result.test_step.e2e> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestResult ;
+                                       rdfs:comment "Test result produced from e2e tests for the test_step."@en ;
+                                       rdfs:label "test_result.test_step.e2e" .
+
+###  https://ai-square.ch/ai2trs#test_result.test_step.component
+<https://ai-square.ch/ai2trs#test_result.test_step.component> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestResult ;
+                                       rdfs:comment "Test result produced from component tests for the test_step."@en ;
+                                       rdfs:label "test_result.test_step.component" .
+
+###  https://ai-square.ch/ai2trs#test_result.test_step.integration
+<https://ai-square.ch/ai2trs#test_result.test_step.integration> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestResult ;
+                                       rdfs:comment "Test result produced from integration tests for the test_step."@en ;
+                                       rdfs:label "test_result.test_step.integration" .
+
+###  https://ai-square.ch/ai2trs#test_result.test_step.api
+<https://ai-square.ch/ai2trs#test_result.test_step.api> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestResult ;
+                                       rdfs:comment "Test result produced from api tests for the test_step."@en ;
+                                       rdfs:label "test_result.test_step.api" .
+
+###  https://ai-square.ch/ai2trs#test_result.test_step.ui
+<https://ai-square.ch/ai2trs#test_result.test_step.ui> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestResult ;
+                                       rdfs:comment "Test result produced from UI tests for the test_step."@en ;
+                                       rdfs:label "test_result.test_step.ui" .
+
+
+
+#################################################################
+#    Test Case Types
+#################################################################
+
+
+###  https://ai-square.ch/ai2tcs#source.test_suite
+<https://ai-square.ch/ai2tcs#source.test_suite> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestCase ;
+                                       rdfs:comment "Source representing the test suite for a test."@en ;
+                                       rdfs:label "source.test_suite" .
+                                                         
+###  https://ai-square.ch/ai2tcs#source.test_case
+<https://ai-square.ch/ai2tcs#source.test_case> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestCase ;
+                                       rdfs:comment "Source representing the test case for a test."@en ;
+                                       rdfs:label "source.test_case" .
+
+
+###  https://ai-square.ch/ai2tcs#source.test_step
+<https://ai-square.ch/ai2tcs#source.test_step> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestCase ;
+                                       rdfs:comment "Source representing the test step for a  test."@en ;
+                                       rdfs:label "source.test_step" .
+
+
+###  https://ai-square.ch/ai2tcs#source.test_suite.unit
+<https://ai-square.ch/ai2tcs#source.test_suite.unit> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestCase ;
+                                       rdfs:comment "Source representing the test suite for a unit test."@en ;
+                                       rdfs:label "source.test_suite.unit" .
+
+###  https://ai-square.ch/ai2tcs#source.test_suite.e2e
+<https://ai-square.ch/ai2tcs#source.test_suite.e2e> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestCase ;
+                                       rdfs:comment "Source representing the test suite for a end to end test."@en ;
+                                       rdfs:label "source.test_suite.e2e" .
+
+###  https://ai-square.ch/ai2tcs#source.test_suite.component
+<https://ai-square.ch/ai2tcs#source.test_suite.component> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestCase ;
+                                       rdfs:comment "Source representing the test suite for a component test."@en ;
+                                       rdfs:label "source.test_suite.component" .
+
+###  https://ai-square.ch/ai2tcs#source.test_suite.integration
+<https://ai-square.ch/ai2tcs#source.test_suite.integration> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestCase ;
+                                       rdfs:comment "Source representing the test suite for an integration test."@en ;
+                                       rdfs:label "source.test_suite.integration" .
+
+###  https://ai-square.ch/ai2tcs#source.test_suite.api
+<https://ai-square.ch/ai2tcs#source.test_suite.api> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestCase ;
+                                       rdfs:comment "Source representing the test suite for an api test."@en ;
+                                       rdfs:label "source.test_suite.api" .
+
+###  https://ai-square.ch/ai2tcs#source.test_suite.ui
+<https://ai-square.ch/ai2tcs#source.test_suite.ui> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestCase ;
+                                       rdfs:comment "Source representing the test suite for an ui test."@en ;
+                                       rdfs:label "source.test_suite.ui" .
+
+
+###  https://ai-square.ch/ai2tcs#source.test_case.unit
+<https://ai-square.ch/ai2tcs#source.test_case.unit> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestCase ;
+                                       rdfs:comment "Source representing the test case for an unit test."@en ;
+                                       rdfs:label "source.test_case.unit" .
+
+###  https://ai-square.ch/ai2tcs#source.test_case.e2e
+<https://ai-square.ch/ai2tcs#source.test_case.e2e> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestCase ;
+                                       rdfs:comment "Source representing the test case for an e2e test."@en ;
+                                       rdfs:label "source.test_case.e2e" .
+
+###  https://ai-square.ch/ai2tcs#source.test_case.component
+<https://ai-square.ch/ai2tcs#source.test_case.component> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestCase ;
+                                       rdfs:comment "Source representing the test case for a component test."@en ;
+                                       rdfs:label "source.test_case.component" .
+
+###  https://ai-square.ch/ai2tcs#source.test_case.integration
+<https://ai-square.ch/ai2tcs#source.test_case.integration> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestCase ;
+                                       rdfs:comment "Source representing the test case for an integration test."@en ;
+                                       rdfs:label "source.test_case.integration" .
+
+###  https://ai-square.ch/ai2tcs#source.test_case.api
+<https://ai-square.ch/ai2tcs#source.test_case.api> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestCase ;
+                                       rdfs:comment "Source representing the test case for an api test."@en ;
+                                       rdfs:label "source.test_case.api" .
+
+###  https://ai-square.ch/ai2tcs#source.test_case.ui
+<https://ai-square.ch/ai2tcs#source.test_case.ui> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestCase ;
+                                       rdfs:comment "Source representing the test case for an ui test."@en ;
+                                       rdfs:label "source.test_case.ui" .
+                          
+
+###  https://ai-square.ch/ai2tcs#source.test_step.unit
+<https://ai-square.ch/ai2tcs#source.test_step.unit> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestCase ;
+                                       rdfs:comment "Source representing the test step for an unit test."@en ;
+                                       rdfs:label "source.test_step.unit" .
+
+###  https://ai-square.ch/ai2tcs#source.test_step.e2e
+<https://ai-square.ch/ai2tcs#source.test_step.e2e> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestCase ;
+                                       rdfs:comment "Source representing the test step for an e2e test."@en ;
+                                       rdfs:label "source.test_step.e2e" .
+
+###  https://ai-square.ch/ai2tcs#source.test_step.component
+<https://ai-square.ch/ai2tcs#source.test_step.component> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestCase ;
+                                       rdfs:comment "Source representing the test step for a component test."@en ;
+                                       rdfs:label "source.test_step.component" .
+
+###  https://ai-square.ch/ai2tcs#source.test_step.integration
+<https://ai-square.ch/ai2tcs#source.test_step.integration> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestCase ;
+                                       rdfs:comment "Source representing the test step for an integration test."@en ;
+                                       rdfs:label "source.test_step.integration" .
+
+###  https://ai-square.ch/ai2tcs#source.test_step.api
+<https://ai-square.ch/ai2tcs#source.test_step.api> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestCase ;
+                                       rdfs:comment "Source representing the test case for an api test."@en ;
+                                       rdfs:label "source.test_step.api" .
+
+###  https://ai-square.ch/ai2tcs#source.test_step.ui
+<https://ai-square.ch/ai2tcs#source.test_step.ui> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:TestCase ;
+                                       rdfs:comment "Source representing the test step for an ui test."@en ;
+                                       rdfs:label "source.test_step.ui" .    
+
+
+
+#################################################################
+#    System Source Types
+#################################################################
+
+###  https://ai-square.ch/ai2msa#source.system
+<https://ai-square.ch/ai2msa#source.system> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:Source ;
+                                       rdfs:comment "A source representing a type of system."@en ;
+                                       rdfs:label "source.system" .
+
+
+#################################################################
+#    Requirement Types
+#################################################################
+
+
+###  https://ai-square.ch/ai2req#requirement.functional
+<https://ai-square.ch/ai2req#requirement.functional> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:Requirement ;
+                                       rdfs:comment "A requirement that defines functional attributes ."@en ;
+                                       rdfs:label "requirement.functional" .
+
+    
+###  https://ai-square.ch/ai2req#requirement.use_case
+<https://ai-square.ch/ai2req#requirement.use_case> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:Requirement ;
+                                       rdfs:comment "A requirement that defines use case attributes ."@en ;
+                                       rdfs:label "requirement.use_case" .
+
+###  https://ai-square.ch/ai2req#requirement.business
+<https://ai-square.ch/ai2req#requirement.business> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:Requirement ;
+                                       rdfs:comment "A requirement that defines business attributes ."@en ;
+                                       rdfs:label "requirement.business" .
+
+
+###  https://ai-square.ch/ai2req#requirement.test_requirement
+<https://ai-square.ch/ai2req#requirement.test_requirement> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:Requirement ;
+                                       rdfs:comment "A requirement that defines test_requirement attributes ."@en ;
+                                       rdfs:label "requirement.test_requirement" .
+
+
+###  https://ai-square.ch/ai2req#requirement.ergonomic
+<https://ai-square.ch/ai2req#requirement.ergonomic> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:Requirement ;
+                                       rdfs:comment "A requirement that defines ergonomic attributes ."@en ;
+                                       rdfs:label "requirement.ergonomic" .
+
+
+###  https://ai-square.ch/ai2req#requirement.performance
+<https://ai-square.ch/ai2req#requirement.performance> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:Requirement ;
+                                       rdfs:comment "A requirement that defines performance attributes ."@en ;
+                                       rdfs:label "requirement.performance" .
+
+                    
+###  https://ai-square.ch/ai2req#requirement.technical
+<https://ai-square.ch/ai2req#requirement.technical> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:Requirement ;
+                                       rdfs:comment "A requirement that defines technical attributes ."@en ;
+                                       rdfs:label "requirement.technical" .
+
+
+###  https://ai-square.ch/ai2req#requirement.user_story
+<https://ai-square.ch/ai2req#requirement.user_story> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:Requirement ;
+                                       rdfs:comment "A requirement that defines user_story attributes ."@en ;
+                                       rdfs:label "requirement.user_story" .
+
+
+###  https://ai-square.ch/ai2req#requirement.security
+<https://ai-square.ch/ai2req#requirement.security> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:Requirement ;
+                                       rdfs:comment "A requirement that defines security attributes ."@en ;
+                                       rdfs:label "requirement.security" .
+
+###  https://ai-square.ch/ai2req#requirement.fix
+<https://ai-square.ch/ai2req#requirement.fix> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:Requirement ;
+                                       rdfs:comment "A requirement that defines attributes that need to be fixed ."@en ;
+                                       rdfs:label "requirement.fix" .
+
+###  https://ai-square.ch/ai2req#requirement.non_functional
+<https://ai-square.ch/ai2req#requirement.non_functional> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:Requirement ;
+                                       rdfs:comment "A requirement that defines non-functional attributes ."@en ;
+                                       rdfs:label "requirement.non_functional" .
+
+###  https://ai-square.ch/ai2req#requirement.undefined
+<https://ai-square.ch/ai2req#requirement.undefined> rdf:type owl:Class ;
+                                       rdfs:subClassOf ai2core:Requirement ;
+                                       rdfs:comment "A requirement with no defined category ."@en ;
+                                       rdfs:label "requirement.undefined" .
+
+###  Generated by the OWL API (version 4.5.29.2024-05-13T12:11:03Z) https://github.com/owlcs/owlapi

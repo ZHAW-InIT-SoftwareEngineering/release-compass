@@ -6,4 +6,5 @@ from langgraph.graph import MessagesState
 class HarnessState(MessagesState):
     """Conversation state plus the user's CI/CD trigger approval decision."""
 
-    approved_cicd: bool
+    cicd_triggered: bool = False
+    user_approved_cicd: bool = False
