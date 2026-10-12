@@ -25,8 +25,7 @@ def build_graph(
 
   
     graph.add_node("tools", ToolNode(tools, handle_tool_errors=_handle_tool_error))
-    # graph.add_node("human_approval", get_approval())
-
+    graph.add_node("llm", call_llm)
 
     graph.add_edge(START, "llm")
     graph.add_conditional_edges("llm", tools_condition, {"tools": "tools", END: END})
