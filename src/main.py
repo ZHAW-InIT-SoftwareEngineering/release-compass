@@ -62,7 +62,10 @@ def main() -> None:
                 continue
 
             response = graph.invoke(
-                {"messages": [*messages, HumanMessage(content=user_input)]}
+                {
+                    "messages": [*messages, HumanMessage(content=user_input)],
+                    "approved_cicd": False,
+                }
             )
             messages = response["messages"]
             print(f"Assistant: {messages[-1].content}")

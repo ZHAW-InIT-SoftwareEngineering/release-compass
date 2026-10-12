@@ -39,6 +39,7 @@ class ToolErrorTests(unittest.TestCase):
         result = build_graph(model, [tool]).invoke(
             {
                 "messages": [HumanMessage(content="Compare the reports")],
+                "approved_cicd": False,
             }
         )
         tool_message = result["messages"][-2]
