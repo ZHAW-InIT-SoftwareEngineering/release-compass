@@ -2,19 +2,20 @@ from pathlib import Path
 
 from langchain.messages import AnyMessage, HumanMessage, SystemMessage
 
-from .adapters.outbound.html_report import HTMLReport
-from .adapters.outbound.sqlite_report_repository import SQLiteReportRepository
-from .application.performance_assessment import build_performance_assessment_service
-from .application.use_cases.import_reports import ReportInput, import_reports
-from .configs.application.local import load_local_config
-from .configs.gates.performance.performance_gate import load_performance_gate_config
-from .configs.llm.llm_config import load_llm_config
-from .domain.gates.performance.serialization import PERFORMANCE_DOMAIN_TYPES
-from .domain.history import report_order
-from .harness.graph import build_graph
-from .harness.system.system_prompt import system_prompt
-from .harness.tools.build_tools import build_tools
-from .llm.llm import init_llm
+from src.adapters.outbound.html_report import HTMLReport
+from src.adapters.outbound.sqlite_report_repository import SQLiteReportRepository
+from src.application.performance_assessment import build_performance_assessment_service
+from src.application.use_cases.import_reports import ReportInput, import_reports
+from src.configs.application.local import load_local_config
+from src.configs.gates.performance.performance_gate import load_performance_gate_config
+from src.configs.llm.llm_config import load_llm_config
+from src.domain.gates.performance.serialization import PERFORMANCE_DOMAIN_TYPES
+from src.domain.history import report_order
+from src.harness.graph import build_graph
+from src.harness.system.system_prompt import system_prompt
+from src.harness.tools.build_tools import build_tools
+from src.harness.tools.cicd_tools import cicd_tool
+from src.llm.llm import init_llm
 
 LLM_CONFIG_PATH = Path("configs/llm/openrouter.yaml")
 LOCAL_CONFIG_PATH = Path("configs/application/local.yaml")
@@ -49,6 +50,7 @@ def main() -> None:
     llm_config = load_llm_config(LLM_CONFIG_PATH)
     llm = init_llm(llm_config)
     tools = build_tools(assessments)
+    tools = tools.append(cicd_tool)
     model_with_tools = llm.bind_tools(tools)
     graph = build_graph(model_with_tools, tools)
 

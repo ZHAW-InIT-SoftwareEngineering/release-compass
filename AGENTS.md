@@ -1,6 +1,7 @@
 # Agent Guidelines
 
 - Keep changes small, focused, and consistent with existing code.
+- Use absolute imports beginning with `src.` for internal project modules; avoid relative imports.
 - Use Python 3.14+ and keep dependencies minimal.
 - Add or update tests when behavior changes.
 - Keep the structure of `tests/` aligned with the project structure, mirroring source paths for corresponding tests.
