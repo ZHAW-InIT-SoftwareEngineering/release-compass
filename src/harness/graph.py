@@ -80,11 +80,13 @@ def build_graph(
         call = cicd_calls[0]
         approved = interrupt(
             {
+                "kind": "cicd_approval",
                 "question": "Do you approve triggering the CI/CD workflow? (yes/no)",
                 "tool": call["name"],
                 "arguments": call["args"],
             }
         )
+
         if approved is True:
             return {"user_approved_cicd": True}
 

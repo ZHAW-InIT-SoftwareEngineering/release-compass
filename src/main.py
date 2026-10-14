@@ -4,6 +4,8 @@ from uuid import uuid4
 from langchain.messages import AnyMessage, HumanMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.memory import MemorySaver
+from langgraph.graph.state import CompiledStateGraph
+from langgraph.types import Command
 
 from src.adapters.outbound.html_report import HTMLReport
 from src.adapters.outbound.sqlite_report_repository import SQLiteReportRepository
@@ -15,6 +17,7 @@ from src.configs.llm.llm_config import load_llm_config
 from src.domain.gates.performance.serialization import PERFORMANCE_DOMAIN_TYPES
 from src.domain.history import report_order
 from src.harness.graph import build_graph
+from src.harness.interrupt_handler import InterruptHandler
 from src.harness.system.system_prompt import system_prompt
 from src.harness.tools.build_tools import build_tools
 from src.harness.tools.cicd_tools import cicd_tool
@@ -61,24 +64,54 @@ def main() -> None:
     graph = build_graph(model_with_tools, tools, checkpointer)
     config: RunnableConfig = {"configurable": {"thread_id": str(uuid4())}}
 
-    SYSTEM_PROMPT = system_prompt(current_report)
-    messages: list[AnyMessage] = [SystemMessage(content=SYSTEM_PROMPT)]
+    run_chat(graph, config, system_prompt(current_report))
+
+
+def run_chat(
+    graph: CompiledStateGraph,
+    config: RunnableConfig,
+    prompt: str,
+) -> None:
+    """Run the CLI conversation and resolve approval interrupts before continuing."""
+    messages: list[AnyMessage] = [SystemMessage(content=prompt)]
 
     try:
         while True:
             user_input = input("You: ").strip()
             if not user_input:
                 continue
-
             response = graph.invoke(
-                {
-                    "messages": [*messages, HumanMessage(content=user_input)],
-                    "approved_cicd": False,
-                },
+                {"messages": [*messages, HumanMessage(content=user_input)]},
                 config=config,
             )
-            messages = response["messages"]
-            print(f"Assistant: {messages[-1].content}")
+
+            pending = response.get("__interrupt__")
+            while pending:
+                answers: dict[str, bool] = {}
+                for request in pending:
+                    payload = request.value
+                    if payload["kind"] != "cicd_approval":
+                        raise ValueError(f"Unknown interrupt kind: {payload['kind']}")
+
+                    print(payload["question"])
+                    print(f"Tool: {payload['tool']}")
+                    print(f"Arguments: {payload['arguments']}")
+                    while True:
+                        try:
+                            answer = InterruptHandler.parse_cicd_approval(
+                                input("You: ")
+                            )
+                            break
+                        except ValueError as error:
+                            print(error)
+                    answers[request.id] = answer
+
+                response = graph.invoke(Command(resume=answers), config=config)
+                pending = response.get("__interrupt__")
+
+            print(f"Assistant: {response['messages'][-1].content}")
+            # The checkpointer retains history, including the initial system prompt.
+            messages = []
     except KeyboardInterrupt:
         print("\nGoodbye")
 
