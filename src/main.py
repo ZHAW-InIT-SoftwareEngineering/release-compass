@@ -20,7 +20,6 @@ from src.harness.graph import build_graph
 from src.harness.interrupt_handler import InterruptHandler
 from src.harness.system.system_prompt import system_prompt
 from src.harness.tools.build_tools import build_tools
-from src.harness.tools.cicd_tools import cicd_tool
 from src.llm.llm import init_llm
 
 LLM_CONFIG_PATH = Path("configs/llm/openrouter.yaml")
@@ -56,7 +55,6 @@ def main() -> None:
     llm_config = load_llm_config(LLM_CONFIG_PATH)
     llm = init_llm(llm_config)
     tools = build_tools(assessments)
-    tools.append(cicd_tool)
     model_with_tools = llm.bind_tools(tools)
 
     checkpointer = MemorySaver()

@@ -615,9 +615,9 @@ class EvidenceToolTests(unittest.TestCase):
         tools = build_tools(self.service)
         self.assertEqual(
             [tool.name for tool in tools],
-            ["compare_gate", "compare_performance", "get_previous_report"],
+            ["compare_gate", "compare_performance", "get_previous_report", "cicd_tool"],
         )
-        self.gate_compare, self.compare, self.previous = tools
+        self.gate_compare, self.compare, self.previous, self.cicd = tools
 
     def test_tools_return_evidence_and_root_without_model_selected_baseline(self):
         arguments = {"report_id": str(self.current.report_id)}
