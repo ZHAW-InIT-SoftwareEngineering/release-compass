@@ -68,7 +68,13 @@ class ChatInterruptTests(unittest.TestCase):
         self.assertEqual(list(calls[1].args[0].resume.values()), [True])
         self.assertEqual(len(calls[2].args[0]["messages"]), 1)
         for call in calls:
-            self.assertEqual(call.kwargs["config"], self.config)
+            self.assertEqual(
+                call.kwargs["config"]["configurable"], self.config["configurable"]
+            )
+        self.assertEqual(
+            [call.kwargs["config"]["run_name"] for call in calls],
+            ["harness.turn", "harness.resume", "harness.turn"],
+        )
         history = self.model.invoke.call_args.args[0]
         self.assertEqual(sum(isinstance(m, SystemMessage) for m in history), 1)
         self.assertEqual(sum(isinstance(m, HumanMessage) for m in history), 2)
