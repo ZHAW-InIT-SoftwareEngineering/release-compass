@@ -5,7 +5,7 @@ data:
   reports:
     - path: data/raw/reports/example_reports/synthetic_report.html
       generated_at_date: "2026-09-02"
-      generated_at_time: "08:44:21"
+      generated_at_time: "08:44:23"
     - path: data/raw/reports/example_reports/report.html
       generated_at_date: "2026-09-02"
       generated_at_time: "08:44:22"

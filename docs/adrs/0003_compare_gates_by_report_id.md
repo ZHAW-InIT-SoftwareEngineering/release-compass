@@ -6,6 +6,10 @@ Date: 2026-09-30
 
 Accepted
 
+The explicit-ID comparison remains an internal primitive. Its compact,
+two-ID tool contract has been superseded in the chat interface by the
+automatic evidence tools in [ADR 0008](0008_incremental_import_and_history.md).
+
 ## Context
 
 The agent needs to compare performance evidence without receiving complete reports in its context. Reports are stored and retrieved by `report_id`; each report contains typed domain gates. Comparison must identify the same gate kind in the current and baseline reports and return both source values and their changes.

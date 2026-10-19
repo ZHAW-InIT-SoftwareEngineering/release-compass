@@ -34,7 +34,7 @@ class MetricSummary:
     violation_rate_percent: float | None = None
     violation_periods: list[ViolationPeriod] = field(default_factory=list)
     supporting_evidence: dict[str, object] = field(default_factory=dict)
-    
+
 
 @dataclass
 class ThresholdConfiguration:
@@ -71,7 +71,7 @@ class TransactionPerformance:
     response_time: ResponseTimeMetric | None
     request_outcomes: RequestOutcomes | None = None
     nfr_status: int | None = None
-    throughput: "ThroughputMetric | None" = None
+    throughput: ThroughputMetric | None = None
 
 
 @dataclass
@@ -113,3 +113,4 @@ class PerformanceGate(Gate):
     cpu_components: dict[str, ResourceMetric] = field(default_factory=dict)
     memory: ResourceMetric | None = None
     memory_components: dict[str, ResourceMetric] = field(default_factory=dict)
+    provider_assessments: dict[str, object] = field(default_factory=dict)
