@@ -10,8 +10,8 @@ class SystemConfig(BaseModel):
 
 class ReportInputConfig(BaseModel):
     path: Path
-    generated_at_date: str
-    generated_at_time: str
+    generated_at_date: str | None = None
+    generated_at_time: str | None = None
 
 
 class DataConfig(BaseModel):

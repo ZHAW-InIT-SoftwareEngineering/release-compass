@@ -29,7 +29,9 @@ class LLMConfigTests(unittest.TestCase):
             ):
                 llm_module.init_llm(self.config)
 
-            self.assertEqual(chat_openai.call_args.kwargs["api_key"], "file-key")
+            self.assertEqual(
+                chat_openai.call_args.kwargs["api_key"].get_secret_value(), "file-key"
+            )
 
     def test_missing_env_file_rejects_shell_value(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -37,9 +39,9 @@ class LLMConfigTests(unittest.TestCase):
             with (
                 patch.object(llm_module, "_ENV_FILE", env_file),
                 patch.dict(os.environ, {"OPENROUTER_API_KEY": "shell-key"}),
+                self.assertRaisesRegex(RuntimeError, "Missing OPENROUTER_API_KEY"),
             ):
-                with self.assertRaisesRegex(RuntimeError, "Missing OPENROUTER_API_KEY"):
-                    llm_module.init_llm(self.config)
+                llm_module.init_llm(self.config)
 
 
 if __name__ == "__main__":
