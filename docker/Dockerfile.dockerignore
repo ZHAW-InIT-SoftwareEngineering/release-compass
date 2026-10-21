@@ -1,0 +1,8 @@
+# Only what the Dockerfile copies is sent to the build.
+*
+!pyproject.toml
+!uv.lock
+!.python-version
+!configs/
+!src/
+**/__pycache__

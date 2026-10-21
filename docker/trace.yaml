@@ -1,0 +1,9 @@
+# Replaces configs/trace/trace.yaml inside the container: Phoenix runs as its
+# own compose service, so the agent exports to it instead of starting one.
+enabled: true
+auto_start: false
+startup_timeout_seconds: 30
+endpoint: "http://phoenix:6006/v1/traces"
+project_name: "release-compass"
+service_name: "release-compass"
+export_timeout_seconds: 3
