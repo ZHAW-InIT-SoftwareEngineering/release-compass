@@ -1,5 +1,52 @@
 # release-compass
 
+## Architecture
+
+```mermaid
+flowchart TB
+    user(["User<br/>(terminal chat)"])
+    main["<b>CLI entrypoint</b> · src/main.py<br/>loads configs/*.yaml and wires all parts"]
+
+    subgraph harness["<b>Agent harness</b> · src/harness (LangGraph)"]
+        llm["<b>LLM node</b><br/>answers using the current report"]
+        approval["<b>Human approval</b><br/>pauses before cicd_tool runs"]
+        tools["<b>Tool node</b><br/>compare_gate · compare_performance<br/>get_previous_report · cicd_tool"]
+        llm -- "cicd_tool call" --> approval
+        approval -- "approved" --> tools
+        llm <-- "other tool calls / results" --> tools
+    end
+
+    openrouter[("<b>OpenRouter</b><br/>LLM API")]
+    phoenix[("<b>Phoenix</b><br/>trace viewer")]
+
+    subgraph app["<b>Application</b> · src/application"]
+        importuc["<b>Import reports</b><br/>(runs once at startup)"]
+        assess["<b>Assessment service</b><br/>gate acceptance · evidence packs"]
+    end
+
+    domain["<b>Domain</b> · src/domain<br/>reports · gates · thresholds · deltas"]
+
+    subgraph adapters["<b>Outbound adapters</b> · src/adapters"]
+        html["<b>HTMLReport</b><br/>parses report files"]
+        sqlite["<b>SQLiteReportRepository</b><br/>stores reports and evidence"]
+    end
+
+    rawdata[("<b>HTML reports</b><br/>data/raw/reports")]
+    db[("<b>SQLite</b><br/>data/database")]
+
+    user <-- "chat · yes/no approval" --> main
+    main -- "1 · import" --> importuc
+    main -- "2 · chat turns" --> llm
+    llm -- "prompts" --> openrouter
+    tools -. "spans" .-> phoenix
+    tools -- "queries" --> assess
+    app -- "uses" --> domain
+    importuc --> html
+    importuc --> sqlite
+    assess --> sqlite
+    html -- "reads" --> rawdata
+    sqlite -- "reads / writes" --> db
+```
 
 Run the local conversational POC:
 
@@ -19,21 +66,16 @@ results through `compare_performance` and `get_previous_report`.
 
 ## Trace
 
-The agent is traced with OpenInference and exported to local Phoenix. Startup
-launches Phoenix automatically (log: `data/harness/phoenix.log`), reuses a
-running server, and stops a server it started after flushing traces on exit.
-Open [localhost:6006](http://localhost:6006), select the **release-compass**
-project, and inspect **harness.turn** and **harness.resume** (CI/CD approval)
-traces. Turns in one conversation share a session ID; traces carry the current
-report ID. Configure tracing in `configs/trace/trace.yaml`; set `enabled: false`
-to disable it or `auto_start: false` to manage Phoenix yourself. See
-[ADR 0010](docs/adrs/0010_trace_the_harness_with_openinference_and_phoenix.md).
+Agent runs are traced to a local Phoenix server, which starts automatically
+with the agent (log: `data/harness/phoenix.log`).
 
-Run checks with the existing environment:
+To view traces, open [localhost:6006](http://localhost:6006) and select the
+**release-compass** project.
 
-```bash
-uv run python -m unittest discover -s tests
-```
+Tracing is configured in `configs/trace/trace.yaml`:
+
+- `enabled: false` turns tracing off.
+- `auto_start: false` skips launching Phoenix, so you run it yourself.
 
 ## Environment
 
