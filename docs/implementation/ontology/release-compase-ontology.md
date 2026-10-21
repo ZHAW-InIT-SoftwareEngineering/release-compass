@@ -21,91 +21,110 @@
 
 ## Proposed conceptual graph
 
-This is a **draft for discussion**, not an accepted architecture decision. Names
-and relationships below describe the domain independently of a serialization,
-programming language, database, or report provider. Arrows read from subject to
-object: “Report describes Run,” for example. These are permitted relationships;
-their presence in the diagram does not mean every instance must have every link.
+This is a **draft for discussion**, not an accepted architecture decision. The
+release-compass ontology reuses the AI-Square core
+([ai-square-extended.ttl](../ai_sqaure_ontology/ai-square-extended.ttl)) and
+extends it with reports, assessment results, history, and baselines from
+[ADR 0005](../../adrs/0005_separate_gate_and_report_acceptance.md),
+[ADR 0006](../../adrs/0006_use_last_passed_gate_and_report_as_baselines.md),
+[ADR 0007](../../adrs/0007_use_provider_performance_assessments.md), and
+[ADR 0008](../../adrs/0008_incremental_import_and_history.md).
+
+Legend:
+
+- **Blue nodes and grey arrows** are reused from AI-Square (`ai2core:`,
+  `ai2apm:`).
+- **Orange nodes and orange arrows** are the release-compass extension (`rc:`).
+  Attributes prefixed with `+ rc:` extend a reused class.
+- **Thick arrows** are `rdfs:subClassOf`; other arrows read from subject to
+  object, for example “ReportResult `rc:has_gate_result` GateResult”.
+- **Rounded, dashed nodes** are roles, not extra classes. A property whose
+  domain and range are the same class (for example `rc:previous_report`) links
+  two *instances* of that class; the role node shows the second instance, for
+  example “Report `rc:previous_report` Report (previous report role)”.
+- The **dotted arrow** `target_metric` appears in the AI-Square diagram but is
+  not declared in the Turtle file.
+- `ai2core:has_id` applies to every class (domain `owl:Thing`) and is omitted.
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 40, "rankSpacing": 60, "padding": 15, "wrappingWidth": 320}}}%%
 flowchart TB
-    subgraph Context["Execution context"]
-        Project["Project"] -->|has system| System["System under test"]
-        System -->|has version| Version["Software version"]
-        Run["Run"] -->|tests version| Version
-        Run -->|has context| ExecutionContext["Execution context"]
-        ExecutionContext -->|uses environment| Environment["Environment"]
-        ExecutionContext -->|uses workload| Workload["Workload"]
-        Report["Report artifact"] -->|describes| Run
-    end
+    ReportResult["rc:ReportResult<br/>rc:outcome: pass / fail / unknown<br/>rc:assessment_version: string<br/>rc:baseline_unavailable_reason: string"]
+    BaseReportResult(["rc:ReportResult<br/>(baseline role)"])
+    Report["rc:Report<br/>rc:content_sha256: string<br/>rc:generated_at: dateTime<br/>rc:ingestion_sequence: integer<br/>rc:is_root: boolean"]
+    GateResult["rc:GateResult<br/>rc:outcome: pass / fail / unknown<br/>rc:assessment_version: string<br/>rc:baseline_unavailable_reason: string"]
+    PrevReport(["rc:Report<br/>(previous report role)"])
+    Environment["ai2core:Environment"]
+    QGE["ai2core:QualityGateExecution"]
+    QualityGate["ai2core:QualityGate"]
+    BaseGateResult(["rc:GateResult<br/>(baseline role)"])
+    MetricResult["rc:MetricResult<br/>rc:outcome: pass / fail / unknown<br/>rc:score: decimal<br/>rc:threshold: decimal"]
+    NextEnv(["ai2core:Environment<br/>(next stage role)"])
+    NextGate(["ai2core:QualityGate<br/>(next gate role)"])
+    Requirement["ai2core:Requirement<br/>ai2core:criticality: string"]
+    Target["ai2core:Target<br/>ai2core:aggregation: string<br/>ai2core:units: string"]
+    MetricType["ai2apm:metric.*<br/>(e.g. metric.http.response_time)"]
+    Metric["ai2core:Metric<br/>ai2core:units: string<br/>+ rc:value: decimal<br/>+ rc:statistic: string"]
+    Observable["ai2core:Observable"]
+    Source["ai2core:Source<br/>(transaction, node)"]
 
-    subgraph Evidence["Measurements and source evidence"]
-        Observation["Observation"] -->|belongs to| Run
-        Observation -->|measures subject| Subject["Measured subject"]
-        Observation -->|observes property| Metric["Metric definition"]
-        Observation -->|uses statistic| Statistic["Statistic"]
-        Observation -->|uses procedure| Procedure["Measurement procedure"]
-        Observation -->|covers| Window["Observation time window"]
-        Observation -->|has result| Quantity["Quantity value"]
-        Quantity -->|has unit| Unit["Unit"]
-        Metric -->|has quantity kind| QuantityKind["Quantity kind"]
-        Observation -->|has source reference| Reference["Evidence reference"]
-        Reference -->|identifies source| Report
-        Reference -->|locates evidence at| Location["Source field or stored evidence location"]
-        Transaction["Transaction"] -->|is a kind of| Subject
-        Component["Component"] -->|is a kind of| Subject
-        System -->|is a kind of| Subject
-    end
+    %% Release-compass extension
+    ReportResult -->|rc:baseline_report_result| BaseReportResult
+    ReportResult -->|rc:assesses_report| Report
+    ReportResult -->|rc:has_gate_result| GateResult
+    Report -->|rc:previous_report| PrevReport
+    Report -->|rc:in_environment| Environment
+    Report -->|rc:contains_execution| QGE
+    GateResult -->|rc:assesses_execution| QGE
+    GateResult -->|rc:of_gate| QualityGate
+    GateResult -->|rc:baseline_gate_result| BaseGateResult
+    GateResult -->|rc:has_metric_result| MetricResult
+    MetricResult -->|rc:assesses_target| Target
+    MetricResult -->|rc:supported_by| Metric
 
-    subgraph Decisions["Assessments and comparisons"]
-        GateAssessment["Gate assessment"] -->|is a kind of| Assessment["Assessment"]
-        ReportAssessment["Report assessment"] -->|is a kind of| Assessment
-        Assessment -->|assesses| Run
-        Assessment -->|uses policy| Policy["Policy version"]
-        Assessment -->|has outcome| Outcome["Assessment outcome"]
-        Assessment -->|is supported by| Observation
-        Assessment -->|evaluates| Requirement["Requirement"]
-        GateAssessment -->|assesses gate| Gate["Gate definition"]
-        Gate -->|checks| Requirement
-        ReportAssessment -->|aggregates| GateAssessment
-
-        Selection["Baseline selection"] -->|is for| Assessment
-        Selection -->|selects baseline| BaselineAssessment["Baseline assessment"]
-        BaselineAssessment -->|is a role of| Assessment
-        Selection -->|uses policy| Policy
-        Selection -->|is within| Scope["History scope"]
-        Selection -->|has status| SelectionStatus["Selection status"]
-        Selection -->|has reason| Reason["Reason"]
-
-        Comparison["Comparison"] -->|uses current observation| Observation
-        Comparison -->|uses baseline observation| BaselineObservation["Baseline observation"]
-        BaselineObservation -->|is a role of| Observation
-        Comparison -->|uses policy| Policy
-        Comparison -->|has compatibility| Compatibility["Compatibility result"]
-        Comparison -->|has difference| Difference["Difference result"]
-        Comparison -->|has reason| Reason
-    end
-
-    subgraph History["Chronological history"]
-        Position["History position"] -->|identifies report| Report
-        Position -->|is within| Scope
-        Position -->|has previous position| Position
-        Position -->|has ordering information| Ordering["Timestamp and ingestion sequence"]
-        Scope -->|is scoped to| Project
-        Run -->|participates in| Scope
-    end
-
-    subgraph Provenance["Derivation provenance"]
-        Analysis["Analysis activity"] -->|uses evidence| Observation
-        Analysis -->|uses policy| Policy
-        Analysis -->|uses candidate assessment| Assessment
-        Analysis -->|uses history| Position
-        Assessment -->|was generated by| Analysis
-        Selection -->|was generated by| Analysis
-        Comparison -->|was generated by| Analysis
-        Analysis -->|is associated with| Agent["Responsible software or person"]
-    end
+    %% Reused from AI-Square
+    Environment -->|ai2core:stages_to| NextEnv
+    QGE -->|ai2core:produces_metric| Metric
+    QualityGate -->|ai2core:precedes| NextGate
+    QualityGate -->|ai2core:evaluated_by_requirement| Requirement
+    Requirement -->|ai2core:contains_target| Target
+    Target ==>|subClassOf| Requirement
+    Target -.->|target_metric| Metric
+    MetricType ==>|subClassOf| Metric
+    Metric ==>|subClassOf| Observable
+    Observable -->|ai2core:yield_from| Source
+    classDef reused fill:#e8f1fb,stroke:#1f6feb,color:#0b2545
+    classDef extension fill:#fff4e5,stroke:#d97706,color:#4a2c00
+    classDef reusedRole fill:#ffffff,stroke:#1f6feb,color:#0b2545,stroke-dasharray:5 5
+    classDef extensionRole fill:#ffffff,stroke:#d97706,color:#4a2c00,stroke-dasharray:5 5
+    class Environment,QualityGate,QGE,Requirement,Target,Observable,Metric,Source,MetricType reused
+    class Report,ReportResult,GateResult,MetricResult extension
+    class NextEnv,NextGate reusedRole
+    class PrevReport,BaseReportResult,BaseGateResult extensionRole
+    linkStyle 0,1,2,3,4,5,6,7,8,9,10,11 stroke:#d97706,stroke-width:2px
+    linkStyle 12,13,14,15,16,17,19,20,21 stroke:#6b7280
+    linkStyle 18 stroke:#6b7280,stroke-dasharray:4 4
 ```
+
+Design notes:
+
+- **Report facts are separate from assessment results.** A report's identity,
+  timestamp, ingestion sequence, and predecessor do not change. Outcomes and
+  baselines depend on the assessment version, so `rc:ReportResult`,
+  `rc:GateResult`, and `rc:MetricResult` carry `rc:assessment_version`, and a
+  report can have several results (ADR 0007, ADR 0008).
+- **Predecessor and baseline differ.** `rc:previous_report` follows report
+  chronology and includes failed and unknown reports. The baseline links point
+  to the latest passing result, and a gate baseline can come from a different
+  report than the report baseline (ADR 0006).
+- **Metric results explain gate outcomes.** Performance passes only when all
+  six metric outcomes pass (ADR 0007); `rc:MetricResult` records each outcome
+  against its `ai2core:Target`.
+- **`rc:of_gate` replaces `ai2core:evaluates`.** The Turtle file declares
+  `evaluates`, `evaluated_by`, and `specifies` several times with different
+  domains and ranges; under RDFS these combine, so they are not reused.
+- **AI-Square adds a value to Metric.** `ai2core:Metric` declares `units` but no
+  value, so `rc:value` and `rc:statistic` extend it.
 
 ## Meaning of the relationships
 
