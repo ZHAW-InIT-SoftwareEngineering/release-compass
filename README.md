@@ -34,3 +34,17 @@ Run checks with the existing environment:
 ```bash
 uv run python -m unittest discover -s tests
 ```
+
+## Environment
+
+API keys are read only from the `.env` file in the project root (values set in the shell are ignored). The key needed depends on the `api_key_env` field of the LLM config in use:
+
+| Key | Used by | Description |
+| --- | --- | --- |
+| `OPENROUTER_API_KEY` | `configs/llm/openrouter.yaml` | API key for OpenRouter |
+
+Example `.env`:
+
+```dotenv
+OPENROUTER_API_KEY="sk-or-..."
+```
