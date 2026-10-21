@@ -4,15 +4,14 @@ from unittest.mock import patch
 
 from langchain.messages import AIMessage
 from langchain_core.language_models.fake_chat_models import FakeMessagesListChatModel
-from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import StructuredTool
 from langgraph.checkpoint.memory import MemorySaver
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
 from src.configs.trace.trace_config import TraceConfig
+from src.harness.conversation import Conversation
 from src.harness.graph import build_graph
 from src.harness.trace.trace import tracing
-from src.main import run_chat
 
 
 class TracingTests(unittest.TestCase):
@@ -32,18 +31,19 @@ class TracingTests(unittest.TestCase):
                 AIMessage(content="Deployed"),
             ]
         )
-        config: RunnableConfig = {"configurable": {"thread_id": "trace-thread"}}
+        conversation = Conversation(
+            build_graph(model, [tool], MemorySaver()),
+            thread_id="trace-thread",
+            system_prompt="System prompt",
+            trace_metadata={"current_report_id": "report-1"},
+        )
         with (
             patch("src.harness.trace.trace.OTLPSpanExporter", return_value=exporter),
             tracing(TraceConfig()),
-            patch("builtins.input", side_effect=["Deploy", "yes", KeyboardInterrupt()]),
-            patch("builtins.print"),
         ):
-            run_chat(
-                build_graph(model, [tool], MemorySaver()),
-                config,
-                "System prompt",
-                trace_metadata={"current_report_id": "report-1"},
+            result = conversation.send("Deploy")
+            conversation.resume(
+                {request.interrupt_id: True for request in result.approvals}
             )
 
         spans = exporter.get_finished_spans()

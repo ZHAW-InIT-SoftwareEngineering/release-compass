@@ -5,7 +5,8 @@
 ```mermaid
 flowchart TB
     user(["User<br/>(terminal chat)"])
-    main["<b>CLI entrypoint</b> · src/main.py<br/>loads configs/*.yaml and wires all parts"]
+    main["<b>CLI entrypoint</b> · src/main.py<br/>terminal chat loop and approval prompts"]
+    session["<b>Chat session</b> · src/chat_session.py<br/>loads configs/*.yaml and wires all parts"]
 
     subgraph harness["<b>Agent harness</b> · src/harness (LangGraph)"]
         llm["<b>LLM node</b><br/>answers using the current report"]
@@ -35,7 +36,8 @@ flowchart TB
     db[("<b>SQLite</b><br/>data/database")]
 
     user <-- "chat · yes/no approval" --> main
-    main -- "1 · import" --> importuc
+    main -- "builds" --> session
+    session -- "1 · import" --> importuc
     main -- "2 · chat turns" --> llm
     llm -- "prompts" --> openrouter
     tools -. "spans" .-> phoenix
