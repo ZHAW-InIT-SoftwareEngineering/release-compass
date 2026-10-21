@@ -1,8 +1,8 @@
 import unittest
 from unittest.mock import Mock, patch
 
-from langchain.messages import AIMessage, HumanMessage, SystemMessage
-from langchain_core.tools import StructuredTool
+from langchain.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_core.tools import StructuredTool, ToolException
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.types import Command, Interrupt
 
@@ -110,6 +110,29 @@ class ChatInterruptTests(unittest.TestCase):
         question = "Do you approve triggering the CI/CD workflow? (yes/no)"
         self.assertEqual(output.count(question), 2)
         self.assertIn("Assistant: Already deployed", output)
+
+    def test_failed_approved_dispatch_does_not_authorize_later_request(self):
+        self.dispatch.side_effect = [ToolException("runner down"), "CI/CD triggered"]
+        self.model.invoke.side_effect = [
+            self.cicd_request("first"),
+            AIMessage(
+                content="",
+                tool_calls=[
+                    {"name": "cicd_tool", "args": {}, "id": "second"},
+                    {"name": "cicd_tool", "args": {}, "id": "third"},
+                ],
+            ),
+            AIMessage(content="Not deployed"),
+        ]
+        output = self.run_inputs(["Deploy", "yes"])
+        self.dispatch.assert_called_once()
+        self.assertIn("Assistant: Not deployed", output)
+        state = self.graph.get_state(self.config).values
+        self.assertFalse(state.get("cicd_triggered", False))
+        tool_call_ids = [
+            m.tool_call_id for m in state["messages"] if isinstance(m, ToolMessage)
+        ]
+        self.assertEqual(tool_call_ids, ["first", "second", "third"])
 
     def test_unknown_interrupt_kind_does_not_resume(self):
         graph = Mock()
