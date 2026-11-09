@@ -5,9 +5,14 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
+    "arize-phoenix>=20.23.0",
     "langchain>=1.4.2",
     "langchain-openai>=1.6.4",
     "langgraph>=1.2.11",
+    "openinference-instrumentation>=0.1.71",
+    "openinference-instrumentation-langchain>=0.1.79",
+    "opentelemetry-exporter-otlp-proto-http>=1.45.1",
+    "opentelemetry-sdk>=1.45.1",
     "pydantic>=2.12.5",
     "pysqlite3>=0.6.0",
 ]

@@ -1,0 +1,7 @@
+enabled: true
+auto_start: true
+startup_timeout_seconds: 30
+endpoint: "http://localhost:6006/v1/traces"
+project_name: "release-compass"
+service_name: "release-compass"
+export_timeout_seconds: 3

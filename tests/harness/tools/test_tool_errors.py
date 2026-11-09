@@ -3,6 +3,7 @@ from unittest.mock import Mock
 from uuid import uuid4
 
 from langchain.messages import AIMessage, HumanMessage
+from langgraph.checkpoint.memory import MemorySaver
 
 from src.domain.gates.performance.performance_gate import PerformanceGate
 from src.domain.report import Report
@@ -36,11 +37,9 @@ class ToolErrorTests(unittest.TestCase):
             AIMessage(content="Handled comparison result"),
         ]
         tool = build_compare_gate_tool(self.reader, PerformanceGate)
-        result = build_graph(model, [tool]).invoke(
-            {
-                "messages": [HumanMessage(content="Compare the reports")],
-                "approved_cicd": False,
-            }
+        result = build_graph(model, [tool], MemorySaver()).invoke(
+            {"messages": [HumanMessage(content="Compare the reports")]},
+            {"configurable": {"thread_id": "tool-errors"}},
         )
         tool_message = result["messages"][-2]
         self.assertEqual(model.invoke.call_count, 2)

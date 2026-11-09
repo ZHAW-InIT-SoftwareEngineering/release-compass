@@ -1,0 +1,26 @@
+# Interactive chat (run from the repository root):
+#   docker compose -f docker/compose.yaml run --rm agent
+# Traces: http://localhost:6006
+# Stop Phoenix afterwards:
+#   docker compose -f docker/compose.yaml down
+
+name: release-compass
+
+services:
+  agent:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    stdin_open: true
+    tty: true
+    depends_on:
+      - phoenix
+    volumes:
+      - ../.env:/app/.env:ro
+      - ../data:/app/data
+      - ./trace.yaml:/app/configs/trace/trace.yaml:ro
+
+  phoenix:
+    image: arizephoenix/phoenix:version-20.23.0
+    ports:
+      - "6006:6006"
