@@ -1,0 +1,116 @@
+# Locust HTML report (window.templateArgs) -> Performance Gate.
+# Every key is required; null means Locust does not provide the value.
+# Path syntax: src/adapters/outbound/json_path.py
+
+extractor:
+  kind: js_assignment
+  variable: window.templateArgs
+
+report:
+  generated_at_date: { transform: date_of, args: [end_time] }
+  generated_at_time: { transform: time_of, args: [end_time] }
+
+performance_gate:
+  response_time:
+    source: { const: locust }
+    unit: { const: ms }
+    observation_count: requests_statistics[name=Aggregated].num_requests
+    duration_seconds: { transform: seconds_between, args: [start_time, end_time] }
+    start_time: start_time
+    end_time: end_time
+    mean: requests_statistics[name=Aggregated].avg_response_time
+    p50: requests_statistics[name=Aggregated].median_response_time
+    p90: response_time_statistics[name=Aggregated]["0.9"]
+    maximum: requests_statistics[name=Aggregated].max_response_time
+    target_nfr: null
+    violation_count: null
+    violation_rate_percent: null
+    violation_periods: null
+    supporting_evidence:
+      minimum: requests_statistics[name=Aggregated].min_response_time
+      p95: requests_statistics[name=Aggregated]["response_time_percentile_0.95"]
+      p99: requests_statistics[name=Aggregated]["response_time_percentile_0.99"]
+      history: history
+    assessment: null
+
+  throughput:
+    source: { const: locust }
+    unit: { const: req/s }
+    observation_count: null
+    target_nfr: null
+    tps: requests_statistics[name=Aggregated].total_rps
+    mean: null
+    violation_count: null
+    violation_rate_percent: null
+    duration_seconds: { transform: seconds_between, args: [start_time, end_time] }
+    start_time: start_time
+    end_time: end_time
+    assessment: null
+    supporting_evidence: {}
+
+  request_outcomes:
+    total_requests: requests_statistics[name=Aggregated].num_requests
+    failed_requests: requests_statistics[name=Aggregated].num_failures
+    passed_requests:
+      transform: subtract
+      args:
+        - requests_statistics[name=Aggregated].num_requests
+        - requests_statistics[name=Aggregated].num_failures
+    failure_rate_percent:
+      transform: percent
+      args:
+        - requests_statistics[name=Aggregated].num_failures
+        - requests_statistics[name=Aggregated].num_requests
+    http_code_histogram: null
+
+  transactions:
+    for_each: requests_statistics[name!=Aggregated]
+    key: name
+    item:
+      name: name
+      response_time:
+        source: { const: locust }
+        unit: { const: ms }
+        observation_count: num_requests
+        duration_seconds: { transform: seconds_between, args: [$.start_time, $.end_time] }
+        start_time: $.start_time
+        end_time: $.end_time
+        mean: avg_response_time
+        p50: median_response_time
+        p90: $.response_time_statistics[name=@name]["0.9"]
+        maximum: max_response_time
+        target_nfr: null
+        violation_count: null
+        violation_rate_percent: null
+        violation_periods: null
+        supporting_evidence:
+          minimum: min_response_time
+          p95: '["response_time_percentile_0.95"]'
+          p99: '["response_time_percentile_0.99"]'
+        assessment: null
+      request_outcomes:
+        total_requests: num_requests
+        failed_requests: num_failures
+        passed_requests: { transform: subtract, args: [num_requests, num_failures] }
+        failure_rate_percent: { transform: percent, args: [num_failures, num_requests] }
+        http_code_histogram: null
+      nfr_status: null
+      throughput:
+        source: { const: locust }
+        unit: { const: req/s }
+        observation_count: null
+        target_nfr: null
+        tps: total_rps
+        mean: null
+        violation_count: null
+        violation_rate_percent: null
+        duration_seconds: { transform: seconds_between, args: [$.start_time, $.end_time] }
+        start_time: $.start_time
+        end_time: $.end_time
+        assessment: null
+        supporting_evidence: {}
+
+  cpu: null
+  cpu_components: null
+  memory: null
+  memory_components: null

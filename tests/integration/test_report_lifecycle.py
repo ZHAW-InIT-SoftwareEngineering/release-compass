@@ -19,6 +19,7 @@ from src.application.use_cases.assess_reports import (
 from src.application.use_cases.compare_gate import ReportNotFoundError
 from src.application.use_cases.import_reports import ReportInput, import_reports
 from src.configs.gates.performance.performance_gate import PerformanceGateConfig
+from src.configs.ingestion.html_mapping import load_html_mapping
 from src.domain.assessment import (
     GateAcceptance,
     GateDefinition,
@@ -138,17 +139,17 @@ class ImportTests(unittest.TestCase):
         self.path.write_text("first")
         self.repository = repository_for(self)
         self.ingestion = Mock()
-        self.ingestion.ingest.side_effect = lambda _: Report(gates=[explicit_gate()])
+        self.ingestion.ingest.side_effect = lambda *_: Report(gates=[explicit_gate()])
 
     def inputs(self, time="08:00:00"):
-        return [ReportInput(self.path, "2026-09-02", time)]
+        return [ReportInput(self.path, "2026-09-02", time, source="test")]
 
     def test_repeat_and_rename_reuse_uuid_timestamps_and_skip_parser(self):
         first = import_reports(self.inputs(), self.ingestion, self.repository)[0]
         renamed = self.path.with_name("renamed.html")
         renamed.write_bytes(self.path.read_bytes())
         reused = import_reports(
-            [ReportInput(renamed, "2020-01-01", "00:00:00")],
+            [ReportInput(renamed, "2020-01-01", "00:00:00", source="test")],
             self.ingestion,
             self.repository,
         )[0]
@@ -178,9 +179,9 @@ class ImportTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Backdated"):
             import_reports(
                 [
-                    ReportInput(later, "2026-09-02", "09:00:00"),
-                    ReportInput(renamed),
-                    ReportInput(earlier, "2026-09-01", "09:00:00"),
+                    ReportInput(later, "2026-09-02", "09:00:00", source="test"),
+                    ReportInput(renamed, source="test"),
+                    ReportInput(earlier, "2026-09-01", "09:00:00", source="test"),
                 ],
                 self.ingestion,
                 self.repository,
@@ -198,19 +199,23 @@ class ImportTests(unittest.TestCase):
 
     def test_missing_html_and_config_timestamp_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "no complete generated-at"):
-            import_reports([ReportInput(self.path)], self.ingestion, self.repository)
+            import_reports(
+                [ReportInput(self.path, source="test")], self.ingestion, self.repository
+            )
         self.assertEqual(self.repository.list_reports(), [])
 
     def test_rejects_partial_source_or_config_timestamp(self):
-        self.ingestion.ingest.side_effect = lambda _: Report(
+        self.ingestion.ingest.side_effect = lambda *_: Report(
             generated_at_date="2026-09-02"
         )
         with self.assertRaisesRegex(ValueError, "both generated-at"):
             import_reports(self.inputs(), self.ingestion, self.repository)
-        self.ingestion.ingest.side_effect = lambda _: Report()
+        self.ingestion.ingest.side_effect = lambda *_: Report()
         with self.assertRaisesRegex(ValueError, "both generated-at"):
             import_reports(
-                [ReportInput(self.path, "2026-09-02")], self.ingestion, self.repository
+                [ReportInput(self.path, "2026-09-02", source="test")],
+                self.ingestion,
+                self.repository,
             )
         self.assertEqual(self.repository.list_reports(), [])
 
@@ -220,7 +225,7 @@ class ImportTests(unittest.TestCase):
         import_reports(
             [
                 *self.inputs("09:00:00"),
-                ReportInput(older, "2026-09-02", "08:00:00"),
+                ReportInput(older, "2026-09-02", "08:00:00", source="test"),
             ],
             self.ingestion,
             self.repository,
@@ -674,33 +679,28 @@ class EvidenceToolTests(unittest.TestCase):
 
 
 class RealReportFlowTests(unittest.TestCase):
-    def test_configured_synthetic_pass_and_real_report_baseline(self):
+    def test_imports_configured_locust_report(self):
         repository = repository_for(self)
-        root = Path(__file__).resolve().parents[1]
-        inputs = [
-            ReportInput(
-                root / "data/raw/reports/example_reports/synthetic_report.html",
-                "2026-09-02",
-                "08:44:21",
-            ),
-            ReportInput(
-                root / "data/raw/reports/example_reports/report.html",
-                "2026-09-02",
-                "08:44:22",
-            ),
-        ]
-        first, current = import_reports(inputs, HTMLReport(), repository)
-        service = assessment_service(repository)
-        service.prepare()
-        self.assertEqual(service.get_evidence(first.report_id).outcome, "pass")
-        pack = service.get_evidence(current.report_id)
-        self.assertEqual(pack.outcome, "fail")
-        self.assertEqual(pack.baseline_report_id, first.report_id)
-        self.assertEqual(
-            pack.gates["PerformanceGate"].acceptance.metrics["cpu"].score, 0
+        root = Path(__file__).resolve().parents[2]
+        report_path = (
+            root
+            / "data/raw/reports/example_reports/loctus/loctus_performance_report.html"
         )
-        nfr = pack.gates["PerformanceGate"].acceptance.metrics["transaction_nfr_status"]
-        self.assertAlmostEqual(nfr.score, 1 - 0.7804878048780488)
+        ingestion = HTMLReport(
+            {"locust": load_html_mapping(root / "configs/ingestion/locust.yaml")}
+        )
+        (imported,) = import_reports(
+            [ReportInput(report_path, source="locust")], ingestion, repository
+        )
+        stored = repository.get_by_id(imported.report_id)
+        self.assertEqual(stored.generated_at_date, "2026-10-26")
+        self.assertEqual(stored.generated_at_time, "15:23:53")
+        self.assertEqual(stored.source_paths, [str(report_path)])
+        gate = stored.gates[0]
+        assert isinstance(gate, PerformanceGate)
+        assert gate.response_time is not None
+        self.assertEqual(gate.response_time.observation_count, 33417)
+        self.assertEqual(len(gate.transactions), 16)
 
 
 if __name__ == "__main__":

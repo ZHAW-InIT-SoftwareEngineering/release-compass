@@ -1,352 +1,173 @@
-"""Read the embedded performance data from an AI-SQUARE HTML report."""
+"""Normalize HTML reports through per-source mapping configurations.
 
+The adapter knows how to pull embedded JSON out of HTML. Everything specific
+to a source tool lives in its ``HtmlMappingConfig``.
+"""
+
+import dataclasses
 import json
+import re
+import types
+import typing
+from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from html.parser import HTMLParser
 from pathlib import Path
 
-from src.domain.gates.performance.performance_gate import (
-    MetricAssessment,
-    MetricSummary,
-    PerformanceGate,
-    RequestOutcomes,
-    ResourceMetric,
-    ResponseTimeMetric,
-    ThresholdConfiguration,
-    ThroughputMetric,
-    TransactionPerformance,
-    ViolationPeriod,
+from pydantic import BaseModel
+
+from src.adapters.outbound.json_path import PathError, resolve
+from src.configs.ingestion.html_mapping import (
+    AttributeExtractor,
+    Const,
+    DictMapping,
+    HtmlMappingConfig,
+    JsAssignmentExtractor,
+    ListMapping,
+    Transform,
+    Value,
 )
+from src.domain.gates.performance.performance_gate import PerformanceGate
 from src.domain.report import Report
 
 
-class _ReportDataParser(HTMLParser):
-    def __init__(self):
+class _AttributeParser(HTMLParser):
+    def __init__(self, attribute: str):
         super().__init__()
-        self.in_report_data = False
-        self.chunks = []
+        self.attribute = attribute
+        self.value: str | None = None
 
     def handle_starttag(self, tag, attrs):
-        if tag == "script" and dict(attrs).get("id") == "__report_data__":
-            self.in_report_data = True
-
-    def handle_data(self, data):
-        if self.in_report_data:
-            self.chunks.append(data)
-
-    def handle_endtag(self, tag):
-        if tag == "script":
-            self.in_report_data = False
+        if self.value is None:
+            self.value = dict(attrs).get(self.attribute)
 
 
-def _time_range(timeseries):
-    timestamps = [point["timestamp"] for point in timeseries if "timestamp" in point]
-    if not timestamps:
-        return None, None
-    return tuple(
-        datetime.fromtimestamp(timestamp / 1000, tz=UTC).isoformat()
-        for timestamp in (min(timestamps), max(timestamps))
-    )
+def _extract(
+    html: str, extractor: JsAssignmentExtractor | AttributeExtractor
+) -> object:
+    match extractor:
+        case JsAssignmentExtractor(variable=variable):
+            match = re.search(rf"{re.escape(variable)}\s*=\s*", html)
+            if match is None:
+                raise ValueError(f"No assignment to {variable} found")
+            data, _ = json.JSONDecoder().raw_decode(html, match.end())
+            return data
+        case AttributeExtractor(attribute=attribute):
+            parser = _AttributeParser(attribute)
+            parser.feed(html)
+            if parser.value is None:
+                raise ValueError(f"No {attribute} attribute found")
+            return json.loads(parser.value)
 
 
-def _assessment(summary):
-    thresholds = summary.get("status_thresholds")
-    return MetricAssessment(
-        status=summary.get("status"),
-        threshold_configuration=(
-            ThresholdConfiguration(
-                amber_violation_rate_percent=thresholds.get("amber_violation_rate_pct"),
-                red_violation_rate_percent=thresholds.get("red_violation_rate_pct"),
-                amber_source=thresholds.get("amber_source"),
-                red_source=thresholds.get("red_source"),
-            )
-            if thresholds
-            else None
-        ),
-        status_reason=summary.get("status_reason") or summary.get("load_nfr_reason"),
-    )
+def _utc(value: object) -> datetime:
+    return datetime.fromisoformat(str(value)).astimezone(UTC)
 
 
-def _summary(summary, timeseries=(), extra_evidence=None):
-    start_time, end_time = _time_range(timeseries)
-    evidence = {
-        key: summary[key]
-        for key in (
-            "p0_value",
-            "p25_value",
-            "p75_value",
-            "std",
-            "coef",
-            "p_value",
-            "ci_lower",
-            "ci_upper",
-            "r_squared_adj",
-        )
-        if key in summary
-    }
-    if timeseries:
-        evidence["timeseries"] = timeseries
-    if extra_evidence:
-        evidence.update(extra_evidence)
-    return MetricSummary(
-        source=summary["source"],
-        unit=summary["units"],
-        observation_count=summary["num_obs"],
-        duration_seconds=summary["duration_sec"],
-        start_time=start_time,
-        end_time=end_time,
-        mean=summary.get("mean"),
-        p50=summary.get("p50_value"),
-        p90=summary.get("p90_value"),
-        maximum=summary.get("p100_value"),
-        target_nfr=summary.get("target_nfr"),
-        violation_count=summary.get("total_nfr_violations"),
-        violation_rate_percent=summary.get("total_violation_perc"),
-        violation_periods=[
-            ViolationPeriod(
-                start_time=period["start_time"],
-                end_time=period["end_time"],
-                duration_seconds=period["duration_sec"],
-                mean_value=period.get("mean_value"),
-                max_value=period.get("max_value"),
-                violation_type=period.get("violation_type"),
-            )
-            for period in summary.get("nfr_violation_periods", ())
-        ],
-        supporting_evidence=evidence,
-    )
+def _percent(part, whole):
+    if whole == 0:
+        raise ValueError("percent: whole is zero")
+    return part / whole * 100
 
 
-def _response_time(summary, timeseries=(), extra_evidence=None):
-    return ResponseTimeMetric(
-        **vars(_summary(summary, timeseries, extra_evidence)),
-        assessment=_assessment(summary),
-    )
+_TRANSFORMS: dict[str, Callable[..., object]] = {
+    "subtract": lambda a, b: a - b,
+    "percent": _percent,
+    "seconds_between": lambda start, end: (_utc(end) - _utc(start)).total_seconds(),
+    "date_of": lambda value: _utc(value).date().isoformat(),
+    "time_of": lambda value: _utc(value).time().isoformat(),
+}
 
 
-def _outcomes(summary):
-    failures = summary.get("transaction_failure")
-    if failures is None:
-        return None
-    total = failures["total_requests"]
-    failed = failures["failed_requests"]
-    return RequestOutcomes(
-        total_requests=total,
-        failed_requests=failed,
-        passed_requests=total - failed,
-        failure_rate_percent=failures["failure_rate_pct"],
-        http_code_histogram=failures.get("http_code_hist", {}),
-    )
+def _value(value: Value, item: object, root: object) -> object:
+    match value:
+        case str():
+            return resolve(value, item, root)
+        case Const(const=const):
+            return const
+        case Transform(transform=name, args=args):
+            return _TRANSFORMS[name](*(_value(arg, item, root) for arg in args))
 
 
-def _throughput(summary, timeseries=(), extra_evidence=None):
-    start_time, end_time = _time_range(timeseries)
-    evidence = {
-        key: summary[key]
-        for key in (
-            "load_nfr_details",
-            "coef",
-            "p_value",
-            "ci_lower",
-            "ci_upper",
-            "r_squared_adj",
-        )
-        if key in summary
-    }
-    if timeseries:
-        evidence["timeseries"] = timeseries
-    if extra_evidence:
-        evidence.update(extra_evidence)
-    return ThroughputMetric(
-        source=summary["source"],
-        unit=summary.get("units", "req/s"),
-        observation_count=summary.get(
-            "num_obs", summary.get("n_data_points", len(timeseries))
-        ),
-        target_nfr=summary.get("target_nfr"),
-        tps=summary.get("tps"),
-        mean=summary.get("mean"),
-        violation_count=summary.get("total_nfr_violations"),
-        violation_rate_percent=summary.get("total_violation_perc"),
-        duration_seconds=summary.get("duration_sec"),
-        start_time=start_time,
-        end_time=end_time,
-        assessment=_assessment(summary),
-        supporting_evidence=evidence,
-    )
+def _dataclass_in(hint: object) -> type:
+    """Return the dataclass in ``X``, ``X | None``, ``list[X]`` or ``dict[K, X]``."""
+    if dataclasses.is_dataclass(hint):
+        return typing.cast(type, hint)
+    if isinstance(hint, types.UnionType) or typing.get_origin(hint) in (list, dict):
+        for arg in reversed(typing.get_args(hint)):
+            if dataclasses.is_dataclass(arg):
+                return typing.cast(type, arg)
+    raise TypeError(f"No dataclass in {hint!r}")
 
 
-def _resource(summary, timeseries=(), linear_trend=()):
-    return ResourceMetric(
-        summary=_summary(summary, timeseries),
-        assessment=_assessment(summary),
-        timeseries=list(timeseries),
-        linear_trend=list(linear_trend),
-    )
+def _field_value(mapping: object, hint: object, item: object, root: object):
+    match mapping:
+        case str() | Const() | Transform():
+            return _value(mapping, item, root)
+        case ListMapping():
+            target = _dataclass_in(hint)
+            return [
+                _build(mapping.item, target, element, root)
+                for element in _list(mapping.for_each, item, root)
+            ]
+        case DictMapping():
+            target = _dataclass_in(hint)
+            return {
+                str(_value(mapping.key, element, root)): _build(
+                    mapping.item, target, element, root
+                )
+                for element in _list(mapping.for_each, item, root)
+            }
+        case dict():
+            return {key: _value(value, item, root) for key, value in mapping.items()}
+        case BaseModel():
+            return _build(mapping, _dataclass_in(hint), item, root)
+    raise TypeError(f"Unsupported mapping {mapping!r}")
+
+
+def _list(path: str, item: object, root: object) -> list:
+    elements = resolve(path, item, root)
+    if not isinstance(elements, list):
+        raise PathError(f"for_each path {path!r} does not resolve to a list")
+    return elements
+
+
+def _build[T](mapping: BaseModel, target: type[T], item: object, root: object) -> T:
+    """Build ``target`` from ``mapping``; ``None`` keeps the domain default."""
+    hints = typing.get_type_hints(target)
+    kwargs = {}
+    for field in dataclasses.fields(typing.cast(typing.Any, target)):
+        if field.name not in type(mapping).model_fields:
+            continue
+        value = getattr(mapping, field.name)
+        if value is not None:
+            kwargs[field.name] = _field_value(value, hints[field.name], item, root)
+        elif (
+            field.default is dataclasses.MISSING
+            and field.default_factory is dataclasses.MISSING
+        ):
+            kwargs[field.name] = None
+    return target(**kwargs)
 
 
 class HTMLReport:
-    def ingest(self, report_path: str | Path) -> Report:
-        """Normalize the report at ``report_path`` into performance evidence."""
+    def __init__(self, mappings: Mapping[str, HtmlMappingConfig]):
+        self.mappings = dict(mappings)
 
+    def ingest(self, report_path: str | Path, source: str) -> Report:
+        """Normalize the ``source`` report at ``report_path`` into domain evidence."""
+
+        mapping = self.mappings.get(source)
+        if mapping is None:
+            raise ValueError(f"No ingestion mapping configured for source {source!r}")
         path = Path(report_path)
-        parser = _ReportDataParser()
-        parser.feed(path.read_text(encoding="utf-8"))
-        if not parser.chunks:
-            raise ValueError(f"No __report_data__ script found in {path}")
-
-        data = json.loads("".join(parser.chunks))
-        apm = data["aggregatorSummary"]["metrics"]["apm"]
-        performance_gate = PerformanceGate()
-        score = data["aggregatorSummary"].get("overall_score", {})
-        transaction_health = score.get("transaction_health", {})
-        infrastructure = score.get("infrastructure_health", {})
-        performance_gate.provider_assessments = {
-            "statuses": data.get("dictionnaries", {}).get("statuses", {}),
-            "performance_gate": data["aggregatorSummary"].get("performance_gate"),
-            "nfr_compliance": score.get("nfr_compliance", {}),
-            "transaction_health": {
-                "weights": {
-                    key: value
-                    for key, value in transaction_health.get("weights", {}).items()
-                    if key in ("status", "transaction_aggregation")
-                },
-                "per_transaction": {
-                    name: {
-                        **{
-                            key: item[key]
-                            for key in (
-                                "transaction_weight",
-                                "transaction_weight_source",
-                                "zero_observation",
-                                "all_observations_failed",
-                                "reason",
-                            )
-                            if key in item
-                        },
-                        "components": {
-                            key: value
-                            for key, value in item.get("components", {}).items()
-                            if key
-                            in (
-                                "local_nfr",
-                                "local_nfr_reason",
-                                "local_nfr_details",
-                                "failure_transactions_rate",
-                                "failed_transactions",
-                            )
-                        },
-                    }
-                    for name, item in transaction_health.get(
-                        "per_transaction", {}
-                    ).items()
-                },
-            },
-            "infrastructure_health": {
-                "rule_based_metrics_weights": infrastructure.get("weights", {})
-                .get("components", {})
-                .get("rule_based_metrics_weights", {}),
-                "per_node": {
-                    name: {
-                        **{
-                            key: item[key]
-                            for key in (
-                                "node_weight",
-                                "node_weight_source",
-                                "zero_observation",
-                            )
-                            if key in item
-                        },
-                        "metrics_components": {
-                            metric: {"local_nfr": assessment.get("local_nfr")}
-                            for metric, assessment in item.get(
-                                "metrics_components", {}
-                            ).items()
-                            if metric in ("cpu", "memory")
-                        },
-                    }
-                    for name, item in infrastructure.get("per_node", {}).items()
-                },
-            },
-            "provider_overall": {
-                key: score[key]
-                for key in ("overall_score", "passing_score", "passing", "weights")
-                if key in score
-            },
-        }
-        performance_gate.response_time = _response_time(
-            apm["response_time"], apm["response_time"].get("timeseries") or ()
-        )
-        performance_gate.throughput = _throughput(
-            apm["load"], apm["load"].get("timeseries") or ()
-        )
-        performance_gate.request_outcomes = _outcomes(apm["response_time"])
-
-        transactions = {}
-        for item in data.get("rtRuleBased", ()):
-            name = item["pageName"]
-            summary = item["summary"]
-            transactions[name] = TransactionPerformance(
-                name=name,
-                response_time=_response_time(
-                    summary,
-                    item.get("timeseries") or (),
-                    {
-                        key: item[key]
-                        for key in ("per_minute", "linear_trend_timeseries")
-                        if key in item
-                    },
-                ),
-                request_outcomes=_outcomes(summary),
-            )
-        for item in data.get("loadRuleBased", ()):
-            name = item["pageName"]
-            transaction = transactions.setdefault(
-                name, TransactionPerformance(name=name, response_time=None)
-            )
-            transaction.throughput = _throughput(
-                item["summary"],
-                item.get("timeseries") or (),
-                {
-                    key: item[key]
-                    for key in ("per_minute", "linear_trend_timeseries")
-                    if key in item
-                },
-            )
-        nfr = data["aggregatorSummary"]["overall_score"]["nfr_compliance"]["metrics"][
-            "apm"
-        ]
-        for name, status in nfr.get("per_transaction", {}).items():
-            transaction = transactions.setdefault(
-                name, TransactionPerformance(name=name, response_time=None)
-            )
-            transaction.nfr_status = status.get("status")
-        performance_gate.transactions = transactions
-
-        for metric_name, component_key in (
-            ("cpu", "cpuComponents"),
-            ("memory", "ramComponents"),
-        ):
-            components = {}
-            for item in data.get(component_key, ()):
-                metric = _resource(
-                    item["summary"],
-                    item.get("timeseries") or (),
-                    item.get("linear_trend") or (),
-                )
-                components[metric.summary.source] = metric
-            setattr(performance_gate, f"{metric_name}_components", components)
-            overall = _resource(apm[metric_name])
-            ranges = [component.summary for component in components.values()]
-            starts = [value.start_time for value in ranges if value.start_time]
-            ends = [value.end_time for value in ranges if value.end_time]
-            overall.summary.start_time = min(starts) if starts else None
-            overall.summary.end_time = max(ends) if ends else None
-            setattr(performance_gate, metric_name, overall)
-
-        return Report(
-            source_path=str(path),
-            generated_at_date=data.get("generated_at_date"),
-            generated_at_time=data.get("generated_at_time"),
-            gates=[performance_gate],
-        )
+        try:
+            data = _extract(path.read_text(encoding="utf-8"), mapping.extractor)
+            report = _build(mapping.report, Report, data, data)
+            report.gates = [
+                _build(mapping.performance_gate, PerformanceGate, data, data)
+            ]
+        except ValueError as error:
+            raise ValueError(f"Cannot ingest {path} as {source!r}: {error}") from error
+        report.source_path = str(path)
+        return report
