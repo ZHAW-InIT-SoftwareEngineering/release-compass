@@ -29,9 +29,7 @@ def _read_env_file(name: str) -> SecretStr | None:
 def init_llm(llm_config: LLMConfig) -> ChatOpenAI:
     api_key = _read_env_file(llm_config.api_key_env)
     if not api_key:
-        raise RuntimeError(
-            f"Missing {llm_config.api_key_env} in {_ENV_FILE}"
-        )
+        raise RuntimeError(f"Missing {llm_config.api_key_env} in {_ENV_FILE}")
 
     return ChatOpenAI(
         model=llm_config.model_name,

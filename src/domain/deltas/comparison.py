@@ -12,7 +12,6 @@ _NON_DELTA_FIELDS = {
     "linear_trend",
     "violation_periods",
     "status",
-    "nfr_status",
 }
 
 
@@ -21,7 +20,9 @@ def _gate_for_type(report: Report, gate_type: type[Gate]) -> Gate:
     if not matches:
         raise ValueError(f"Report {report.report_id} has no {gate_type.__name__} gate")
     if len(matches) > 1:
-        raise ValueError(f"Report {report.report_id} has multiple {gate_type.__name__} gates")
+        raise ValueError(
+            f"Report {report.report_id} has multiple {gate_type.__name__} gates"
+        )
     return matches[0]
 
 

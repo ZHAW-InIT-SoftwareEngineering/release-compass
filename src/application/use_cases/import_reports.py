@@ -1,6 +1,6 @@
 """Incrementally import static report sources, independently of client configuration."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from hashlib import sha256
 from pathlib import Path
@@ -17,6 +17,8 @@ class ReportInput:
     path: Path
     generated_at_date: str | None = None
     generated_at_time: str | None = None
+    # Names the ingestion mapping; required so the format is never guessed.
+    source: str = field(kw_only=True)
 
 
 @dataclass
@@ -69,7 +71,7 @@ def _import_report(
         _reuse_report(report, item, batch)
         return
 
-    report = ingestion.ingest(item.path)
+    report = ingestion.ingest(item.path, item.source)
     _ensure_source_unchanged(item.path, fingerprint)
     _apply_timestamp(report, item)
     _reject_backdated_report(report, item.path, batch.latest_stored_at)
