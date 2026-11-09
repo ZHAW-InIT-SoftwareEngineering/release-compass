@@ -45,10 +45,6 @@ def _mapping(extractor, **gate):
         "throughput",
         "request_outcomes",
         "transactions",
-        "cpu",
-        "cpu_components",
-        "memory",
-        "memory_components",
     ]
     return HtmlMappingConfig.model_validate(
         {
@@ -106,10 +102,7 @@ class HTMLReportTests(unittest.TestCase):
         self.assertEqual(health.name, "GET /actuator/health")
         self.assertEqual(health.response_time.p90, 1500)
         self.assertEqual(health.response_time.start_time, "2026-10-26T15:11:52Z")
-        self.assertIsNone(health.nfr_status)
 
-        self.assertIsNone(gate.cpu)
-        self.assertEqual(gate.cpu_components, {})
         self.assertEqual(gate.provider_assessments, {})
 
     def test_reads_json_from_html_attribute(self):

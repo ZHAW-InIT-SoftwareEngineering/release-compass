@@ -12,7 +12,6 @@ _NON_DELTA_FIELDS = {
     "linear_trend",
     "violation_periods",
     "status",
-    "nfr_status",
 }
 
 

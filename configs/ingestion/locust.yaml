@@ -94,7 +94,6 @@ performance_gate:
         passed_requests: { transform: subtract, args: [num_requests, num_failures] }
         failure_rate_percent: { transform: percent, args: [num_failures, num_requests] }
         http_code_histogram: null
-      nfr_status: null
       throughput:
         source: { const: locust }
         unit: { const: req/s }
@@ -109,8 +108,3 @@ performance_gate:
         end_time: $.end_time
         assessment: null
         supporting_evidence: {}
-
-  cpu: null
-  cpu_components: null
-  memory: null
-  memory_components: null

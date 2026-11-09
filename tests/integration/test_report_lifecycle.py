@@ -33,10 +33,8 @@ from src.domain.gates.performance.assessment import (
     assess_performance,
 )
 from src.domain.gates.performance.performance_gate import (
-    MetricSummary,
     PerformanceGate,
     RequestOutcomes,
-    ResourceMetric,
     ResponseTimeMetric,
     ThroughputMetric,
     TransactionPerformance,
@@ -111,7 +109,6 @@ def weighted_gate():
     gate.provider_assessments = {
         "statuses": {"red": 0, "amber": 1, "green": 2},
         "nfr_compliance": {
-            "score_nfr": 0.1,
             "weights": {"red": 1, "amber": 0.5, "green": 0},
         },
         "transaction_health": {
@@ -126,7 +123,6 @@ def weighted_gate():
                 },
             },
         },
-        "infrastructure_health": {"per_node": {}},
     }
     return gate
 
@@ -251,32 +247,31 @@ class AssessmentTests(unittest.TestCase):
 
     def test_explicit_scores_take_precedence_and_config_controls_outcome(self):
         gate = explicit_gate(0.8)
-        gate.provider_assessments["nfr_compliance"] = {"score_nfr": 1}
         acceptance = assess_performance(gate, self.thresholds)
         self.assertEqual(acceptance.outcome, "pass")
-        self.assertEqual(acceptance.metrics["cpu"].provider_evidence["threshold"], 0.99)
-        gate.provider_assessments["performance_gate"]["metrics"]["cpu"]["score"] = 0.79
+        self.assertEqual(
+            acceptance.metrics["response_time"].provider_evidence["threshold"], 0.99
+        )
+        gate.provider_assessments["performance_gate"]["metrics"]["response_time"][
+            "score"
+        ] = 0.79
         self.assertEqual(assess_performance(gate, self.thresholds).outcome, "fail")
 
     def test_invalid_or_missing_explicit_score_is_unknown_without_fallback(self):
         for invalid in (None, True, -0.1, 1.1, float("nan"), float("inf"), "0.9"):
             with self.subTest(invalid=invalid):
                 gate = explicit_gate()
-                gate.provider_assessments["performance_gate"]["metrics"]["cpu"][
-                    "score"
-                ] = invalid
-                self.assertEqual(
-                    assess_performance(gate, self.thresholds).metrics["cpu"].outcome,
-                    "unknown",
-                )
+                gate.provider_assessments["performance_gate"]["metrics"][
+                    "response_time"
+                ]["score"] = invalid
+                result = assess_performance(gate, self.thresholds)
+                self.assertEqual(result.metrics["response_time"].outcome, "unknown")
 
-    def test_weighted_penalties_and_nfr_aggregate_use_provider_values(self):
+    def test_weighted_penalties_use_provider_values(self):
         result = assess_performance(weighted_gate(), self.thresholds)
         self.assertEqual(result.metrics["response_time"].score, 0.75)
         self.assertEqual(result.metrics["request_outcomes"].score, 0.75)
         self.assertEqual(result.metrics["throughput"].score, 1)
-        self.assertEqual(result.metrics["transaction_nfr_status"].score, 0.9)
-        self.assertEqual(result.metrics["cpu"].outcome, "unknown")
 
     def test_throughput_status_weights_and_unevaluable_source(self):
         gate = weighted_gate()
@@ -337,46 +332,6 @@ class AssessmentTests(unittest.TestCase):
         self.assertEqual(combine_outcomes(["pass", "unknown"]), "unknown")
         self.assertEqual(combine_outcomes(["unknown", "fail"]), "fail")
         self.assertEqual(combine_outcomes([]), "unknown")
-
-    def test_provider_no_data_flag_does_not_become_zero_penalty_pass(self):
-        gate = weighted_gate()
-        gate.provider_assessments["nfr_compliance"].update(
-            {"score_nfr": 0, "has_data": False}
-        )
-        result = assess_performance(gate, self.thresholds)
-        self.assertEqual(result.metrics["transaction_nfr_status"].outcome, "unknown")
-
-    def test_resource_penalties_follow_provider_node_weights(self):
-        gate = weighted_gate()
-        for metric, unit in (("cpu", "cores"), ("memory", "bytes")):
-            setattr(
-                gate,
-                f"{metric}_components",
-                {
-                    name: ResourceMetric(MetricSummary(name, unit, 10, 10))
-                    for name in ("X", "Y")
-                },
-            )
-        gate.provider_assessments["infrastructure_health"]["per_node"] = {
-            "X": {
-                "node_weight": 0.75,
-                "metrics_components": {
-                    "cpu": {"local_nfr": 0},
-                    "memory": {"local_nfr": 0},
-                },
-            },
-            "Y": {
-                "node_weight": 0.25,
-                "metrics_components": {
-                    "cpu": {"local_nfr": 0.6},
-                    "memory": {"local_nfr": 0.2},
-                },
-            },
-        }
-        result = assess_performance(gate, self.thresholds)
-        self.assertAlmostEqual(result.metrics["cpu"].score, 0.85)
-        self.assertAlmostEqual(result.metrics["memory"].score, 0.95)
-        self.assertEqual(result.metrics["cpu"].outcome, "pass")
 
     def test_zero_observations_cannot_pass_with_positive_weight(self):
         gate = weighted_gate()
@@ -501,9 +456,9 @@ class EvidenceTests(unittest.TestCase):
     def test_nonfinite_provider_score_persists_as_unknown(self):
         current = self.add()
         # The report has not been assessed yet, so update its legacy un-fingerprinted fixture.
-        current.gates[0].provider_assessments["performance_gate"]["metrics"]["cpu"][
-            "score"
-        ] = float("nan")
+        current.gates[0].provider_assessments["performance_gate"]["metrics"][
+            "response_time"
+        ]["score"] = float("nan")
         self.repository.save(current)
         self.service.prepare()
         self.assertEqual(
@@ -535,7 +490,7 @@ class EvidenceTests(unittest.TestCase):
         self.assertEqual(original, self.service.get_evidence(current.report_id))
         score_comparison = original.gates["PerformanceGate"].comparisons[
             "acceptance_scores"
-        ]["cpu"]
+        ]["response_time"]
         self.assertAlmostEqual(score_comparison["absolute_delta"], 0.1)
         self.assertAlmostEqual(
             score_comparison["relative_delta_percent"], 0.1 / 0.85 * 100
@@ -578,7 +533,7 @@ class EvidenceTests(unittest.TestCase):
 
 
 class ComparisonTests(unittest.TestCase):
-    def test_deltas_units_missing_values_and_categorical_statuses(self):
+    def test_deltas_units_and_missing_values(self):
         baseline = weighted_gate()
         baseline.response_time = ResponseTimeMetric(
             "overall", "ms", 10, 10, mean=100, p50=0
@@ -586,7 +541,6 @@ class ComparisonTests(unittest.TestCase):
         current = copy.deepcopy(baseline)
         current.response_time.mean = 110
         current.response_time.p50 = 2
-        current.transactions["A"].nfr_status = 2
         values = compare_performance_values(current, baseline)
         mean = values["numeric"]["response_time.mean"]
         self.assertEqual(mean["absolute_delta"], 10)
@@ -595,7 +549,6 @@ class ComparisonTests(unittest.TestCase):
             values["numeric"]["response_time.p50"]["relative_unavailable_reason"],
             "Zero baseline",
         )
-        self.assertEqual(values["transaction_nfr_status"]["A"]["current"], 2)
         current.response_time.unit = "seconds"
         self.assertEqual(
             compare_performance_values(current, baseline)["numeric"][

@@ -8,5 +8,5 @@
 - Run relevant checks before finishing and report their results.
 - Preserve unrelated work in the working tree.
 - Keep documentation concise and source research claims.
-- When a project uses ADRs, treat them as the source of truth for design decisions. Read relevant ADRs before changing covered behavior and keep them current when decisions change. Propose new or updated ADRs and get approval before writing them. Each ADR has a hard limit of 300 characters.
+- When a project uses ADRs, treat them as the source of truth for design decisions. Read relevant ADRs before changing covered behavior and keep them current when decisions change. Propose new or updated ADRs and get approval before writing them. Each ADR has a hard limit of 3000 characters, including spaces, Markdown syntax, and line breaks.
 - If a new package is needed, pause work before changing dependencies or installing it. Tell the developer the exact `uv add <package>` command, listing only direct packages the task actually needs, not their transitive dependencies. The developer must run it manually in the terminal; resume only after the developer confirms the package was added and explicitly gives the go-ahead.

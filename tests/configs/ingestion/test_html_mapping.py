@@ -10,7 +10,6 @@ from src.configs.ingestion.html_mapping import (
     PerformanceGateMapping,
     ReportMapping,
     RequestOutcomesMapping,
-    ResourceMetricMapping,
     ResponseTimeMetricMapping,
     ThresholdConfigurationMapping,
     ThroughputMetricMapping,
@@ -24,7 +23,6 @@ from src.domain.gates.performance.performance_gate import (
     MetricSummary,
     PerformanceGate,
     RequestOutcomes,
-    ResourceMetric,
     ResponseTimeMetric,
     ThresholdConfiguration,
     ThroughputMetric,
@@ -47,7 +45,6 @@ class HtmlMappingTests(unittest.TestCase):
             (RequestOutcomesMapping, RequestOutcomes),
             (ThroughputMetricMapping, ThroughputMetric),
             (TransactionPerformanceMapping, TransactionPerformance),
-            (ResourceMetricMapping, ResourceMetric),
             (PerformanceGateMapping, PerformanceGate),
             (ReportMapping, Report),
         ):
@@ -58,12 +55,14 @@ class HtmlMappingTests(unittest.TestCase):
     def test_loads_locust_mapping(self):
         mapping = load_html_mapping(LOCUST_MAPPING)
         self.assertEqual(mapping.extractor.kind, "js_assignment")
-        self.assertIsNone(mapping.performance_gate.cpu)
+        self.assertIsNone(mapping.performance_gate.throughput.target_nfr)
 
     def test_requires_every_field_to_be_stated(self):
         data = load_html_mapping(LOCUST_MAPPING).model_dump()
-        del data["performance_gate"]["cpu"]
-        with self.assertRaisesRegex(ValidationError, "performance_gate.cpu"):
+        del data["performance_gate"]["request_outcomes"]
+        with self.assertRaisesRegex(
+            ValidationError, "performance_gate.request_outcomes"
+        ):
             type(load_html_mapping(LOCUST_MAPPING)).model_validate(data)
 
     def test_rejects_unknown_fields(self):

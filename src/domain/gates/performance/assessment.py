@@ -20,9 +20,6 @@ METRICS = (
     "response_time",
     "throughput",
     "request_outcomes",
-    "transaction_nfr_status",
-    "cpu",
-    "memory",
 )
 
 
@@ -307,69 +304,6 @@ def _assess_transaction_metrics(
     return results
 
 
-def _assess_transaction_nfr(
-    provider: dict[str, Any], thresholds: dict[str, float]
-) -> MetricAcceptance:
-    nfr = provider.get("nfr_compliance", {})
-    penalty = _number(nfr.get("score_nfr"))
-    if nfr.get("has_data") is False:
-        penalty = None
-    return _accept(
-        1 - penalty if penalty is not None else None,
-        thresholds["transaction_nfr_status"],
-        "aggregatorSummary.overall_score.nfr_compliance.score_nfr",
-        reason="Missing or invalid supplied NFR penalty",
-        evidence=nfr,
-    )
-
-
-def _assess_infrastructure_metrics(
-    gate: PerformanceGate,
-    provider: dict[str, Any],
-    thresholds: dict[str, float],
-) -> dict[str, MetricAcceptance]:
-    nodes = provider.get("infrastructure_health", {}).get("per_node", {})
-    results = {}
-    for metric in ("cpu", "memory"):
-        sources = []
-        components = getattr(gate, f"{metric}_components")
-        for name in sorted(components.keys() | nodes.keys()):
-            item = nodes.get(name, {})
-            weight = _number(item.get("node_weight"), bounded=False)
-            penalty = _number(
-                item.get("metrics_components", {}).get(metric, {}).get("local_nfr")
-            )
-            if (
-                name not in components
-                or components[name].summary.observation_count <= 0
-            ):
-                penalty = None
-            excluded = weight == 0
-            sources.append(
-                SourceAssessment(
-                    name,
-                    f"aggregatorSummary.overall_score.infrastructure_health.per_node[{name}].metrics_components.{metric}.local_nfr",
-                    penalty,
-                    weight,
-                    excluded,
-                    "Provider excluded this source"
-                    if excluded
-                    else (
-                        "Missing or unevaluable provider assessment"
-                        if penalty is None or weight is None
-                        else None
-                    ),
-                    item,
-                )
-            )
-        results[metric] = _aggregate(
-            sources,
-            thresholds[metric],
-            "aggregatorSummary.overall_score.infrastructure_health",
-        )
-    return results
-
-
 def assess_performance(
     gate: PerformanceGate,
     thresholds: dict[str, float],
@@ -380,7 +314,6 @@ def assess_performance(
     if explicit is not None:
         return _assess_explicit_performance_metrics(explicit, thresholds)
 
-    results = _assess_transaction_metrics(gate, provider, thresholds)
-    results["transaction_nfr_status"] = _assess_transaction_nfr(provider, thresholds)
-    results.update(_assess_infrastructure_metrics(gate, provider, thresholds))
-    return _combine_metric_results(results)
+    return _combine_metric_results(
+        _assess_transaction_metrics(gate, provider, thresholds)
+    )

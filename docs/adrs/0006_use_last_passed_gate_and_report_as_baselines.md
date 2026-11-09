@@ -8,72 +8,59 @@ Accepted
 
 ## Context
 
-Gate comparisons need a trusted reference for each gate, while release
-comparisons need a trusted reference for the report as a whole. These references
-must follow the separate gate and report acceptance decisions in
+Gate and release comparisons need trusted references following the separate
+gate/report acceptance decisions in
 [ADR 0005](0005_separate_gate_and_report_acceptance.md).
 
 ## Decision
 
-For the POC, select baselines as follows:
+For the POC:
 
-- A gate uses the latest passing instance of the same gate type, ordered by
-  its containing report's `generated_at_date` and `generated_at_time`. Its
-  containing report does not need to have passed overall.
-- A report uses the latest prior report that passed, meaning every gate in
-  that report passed, ordered by `generated_at_date` and `generated_at_time`.
+- A gate uses the latest passing instance of its gate type, even if its
+  containing report failed overall.
+- A report uses the latest prior passing report: every gate must have passed.
 
-The two fields together form a UTC timestamp. Timestamp source precedence and
-validation are defined in [ADR 0009](0009_require_complete_report_timestamps.md).
-Re-ingesting the same report preserves its original values. Reports are
-ordered by this combined timestamp; ingestion order breaks ties when
-timestamps are equal. The application must preserve ingestion order to resolve
-ties deterministically.
+Order reports by the UTC timestamp formed from `generated_at_date` and
+`generated_at_time`, with preserved ingestion order breaking ties
+deterministically. [ADR 0009](0009_require_complete_report_timestamps.md)
+defines timestamp source precedence and validation. Re-ingestion preserves
+original values. Candidates must precede the current item in this order;
+select the eligible passing candidate with the greatest timestamp, then
+latest ingestion order for ties.
 
-Candidates must precede the current item in this report order. The baseline
-is the eligible passing candidate with the greatest combined timestamp (and
-latest ingestion order when timestamps tie).
+The evidence pack identifies current and selected baseline items, their
+acceptance results and snapshots, and preserves baseline identifiers.
+Report-level evidence includes both reports and their gate outcomes.
+Gate-level evidence includes each baseline gate and its source report ID,
+even when it differs from the report baseline. This exposes one history hop;
+the agent can request an earlier hop using a baseline identifier.
 
-The evidence pack identifies the current item and its selected baseline,
-includes their acceptance results and snapshots, and preserves the selected
-baseline identifiers. At report level, it includes the current and baseline
-reports and the gate outcomes in each. At gate level, it includes each gate's
-baseline gate and source report ID, even when that source report differs from
-the report-level baseline. This exposes one hop of history so the agent can
-explain the comparison and use a baseline identifier to request an earlier hop
-when needed.
+Without a prior passing item of the required kind, baseline comparison cannot
+mark an item passing. A report fails to pass if any gate is not explicitly
+passing. Absolute acceptance still runs without a baseline; the first
+qualifying gate/report establishes its respective baseline for later reports.
+Represent missing baselines with null identifiers and an unavailable-comparison
+reason, never a fabricated seed.
 
-If no previously passing item of the required kind is available, the item
-cannot be marked as passing on the basis of a baseline comparison. A report
-with any gate that is not explicitly passing does not pass.
+Chronological predecessor links are separate from passing-baseline links:
+they include failed and unknown reports and end with a null predecessor and
+`is_root: true`. [ADR 0008](0008_incremental_import_and_history.md) defines
+import identity, rejection of backdated additions, and versioned history.
 
-Absolute acceptance still runs when no baseline exists. The first qualifying
-gate/report establishes its respective baseline for later reports. Missing
-baselines are represented by null identifiers with an unavailable-comparison
-reason, rather than a fabricated seed.
-
-Chronological predecessor links are separate from passing-baseline links.
-They include failed and unknown reports and terminate at a null predecessor
-with `is_root: true`. See [ADR 0008](0008_incremental_import_and_history.md)
-for import identity, rejection of backdated additions, and versioned history.
-
-This POC policy replaces the earlier proposal to use the previous compatible
-run or an average. The combined generated-at timestamp is authoritative for
-ordering; ingestion order is used only to break ties. Other baseline policies
-may be considered separately for future work.
+This POC policy replaces the previous-compatible-run or average proposal.
+Generated-at timestamps govern ordering; ingestion order only breaks ties.
+Future work may consider other baseline policies.
 
 ## Alternatives
 
-- **Use the immediately previous run, whether it passed or failed.** Rejected
-  because a failed result should not become the trusted reference for the next
-  comparison, and ingestion recency alone does not establish report recency.
-- **Use a moving or simple average.** Rejected for the POC because the decision
-  is to use the last passing result as a concrete, traceable reference.
+- **Immediately previous run, passing or failing.** Rejected: failed results
+  are not trusted references, and ingestion recency alone is not report recency.
+- **Moving or simple average.** Rejected for the POC: the last passing result
+  provides a concrete, traceable reference.
 
 ## Consequences
 
-Gate baselines can advance independently of report baselines. A passing gate
-from an overall-failed report remains eligible for comparisons of that gate
-type. Report ingestion must retain both generated-at fields and ingestion
-order. The evidence pack must identify the selected baseline explicitly so
-comparisons are reproducible and traceable.
+Gate baselines advance independently of report baselines; passing gates in
+failed reports remain eligible for their gate type. Retain both generated-at
+fields and ingestion order. Explicit baseline identifiers make evidence-pack
+comparisons reproducible and traceable.

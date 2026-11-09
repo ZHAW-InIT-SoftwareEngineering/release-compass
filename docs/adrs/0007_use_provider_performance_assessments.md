@@ -20,23 +20,21 @@ Without this block, use these supplied penalties:
 | Response time | Transaction-health component `local_nfr`, including duration-sensitive violation reasons |
 | Throughput | Load-summary status mapped through the report's NFR categorical penalty weights |
 | Request outcomes | Transaction-health component `failure_transactions_rate` |
-| Transaction NFR status | Aggregate `nfr_compliance.score_nfr`, with its provider weights and evidence |
-| CPU and memory | Per-node `metrics_components[metric].local_nfr` |
 
 Convert penalties to scores using `1 - penalty`. Apply the project gate
 configuration's `>=` thresholds. Provider targets, thresholds, statuses, and
 passing flags remain separately identifiable evidence.
 
-Use supplied transaction/node weights, normalized over included sources.
+Use supplied transaction weights, normalized over included sources.
 An explicit equal-transaction policy may supply equal weights when individual
 weights are absent; zero-observation sources then receive zero weight.
 Record zero-weight exclusions. Missing weighting policies, invalid penalties,
 positive-weight unevaluable sources, and empty eligible sets yield unknown.
 Throughput's explicit `not_evaluable` flag must not become a passing score.
 
-All six metric outcomes must pass for Performance to pass. Weighted aggregation
-can offset individual-source failures; every source is still exposed in the
-evidence. No median across categorical statuses is introduced.
+All three metric outcomes must pass for Performance to pass. Weighted
+aggregation can offset individual-source failures; every source is still
+exposed in the evidence. No median across categorical statuses is introduced.
 
 The provider's global release score is retained as provenance. It includes
 out-of-scope logs/trends and does not determine the project's release result.
@@ -57,7 +55,7 @@ earlier results remain available.
   assessments already supplied in the report.
 - **Use the provider's global release score as project acceptance.** Rejected
   because it includes signals outside the Performance gate policy. Preserve it
-  as provenance while applying project thresholds to the six metric results.
+  as provenance while applying project thresholds to the three metric results.
 - **Average categorical statuses or substitute a score when evidence is
   missing.** Rejected because status codes are categories and missing evidence
   cannot establish a pass. Preserve provider weights and return `unknown` when

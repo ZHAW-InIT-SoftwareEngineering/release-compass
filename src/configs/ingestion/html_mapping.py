@@ -158,15 +158,7 @@ class TransactionPerformanceMapping(_Strict):
     name: Value
     response_time: ResponseTimeMetricMapping | None
     request_outcomes: RequestOutcomesMapping | None
-    nfr_status: Value | None
     throughput: ThroughputMetricMapping | None
-
-
-class ResourceMetricMapping(_Strict):
-    summary: MetricSummaryMapping
-    assessment: MetricAssessmentMapping | None
-    timeseries: Value | None
-    linear_trend: Value | None
 
 
 class PerformanceGateMapping(_Strict):
@@ -174,10 +166,6 @@ class PerformanceGateMapping(_Strict):
     throughput: ThroughputMetricMapping | None
     request_outcomes: RequestOutcomesMapping | None
     transactions: DictMapping[TransactionPerformanceMapping] | None
-    cpu: ResourceMetricMapping | None
-    cpu_components: DictMapping[ResourceMetricMapping] | None
-    memory: ResourceMetricMapping | None
-    memory_components: DictMapping[ResourceMetricMapping] | None
 
 
 class ReportMapping(_Strict):

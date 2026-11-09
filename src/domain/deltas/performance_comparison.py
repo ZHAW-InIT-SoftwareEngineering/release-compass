@@ -72,11 +72,6 @@ def _measurements(gate: PerformanceGate) -> dict[str, tuple[Any, str]]:
         summary(f"{prefix}.response_time", tx.response_time)
         throughput(f"{prefix}.throughput", tx.throughput)
         outcomes(f"{prefix}.request_outcomes", tx.request_outcomes)
-    for metric in ("cpu", "memory"):
-        overall = getattr(gate, metric)
-        summary(metric, overall.summary if overall else None)
-        for name, item in getattr(gate, f"{metric}_components").items():
-            summary(f"{metric}_components.{name}", item.summary)
     return values
 
 
@@ -122,15 +117,4 @@ def compare_performance_values(
             "relative_unavailable_reason": reason
             or ("Zero baseline" if baseline_value == 0 else None),
         }
-    categorical = {}
-    for name in sorted(
-        current.transactions.keys()
-        | (baseline.transactions.keys() if baseline else set())
-    ):
-        current_tx = current.transactions.get(name)
-        baseline_tx = baseline.transactions.get(name) if baseline else None
-        categorical[name] = {
-            "current": current_tx.nfr_status if current_tx else None,
-            "baseline": baseline_tx.nfr_status if baseline_tx else None,
-        }
-    return {"numeric": numeric, "transaction_nfr_status": categorical}
+    return {"numeric": numeric}

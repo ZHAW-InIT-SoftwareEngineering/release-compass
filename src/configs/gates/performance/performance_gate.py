@@ -20,9 +20,6 @@ class PerformanceMetricThresholds(BaseModel):
     response_time: MetricAcceptanceThreshold
     throughput: MetricAcceptanceThreshold
     request_outcomes: MetricAcceptanceThreshold
-    transaction_nfr_status: MetricAcceptanceThreshold
-    cpu: MetricAcceptanceThreshold
-    memory: MetricAcceptanceThreshold
 
 
 class PerformanceGateConfig(BaseModel):

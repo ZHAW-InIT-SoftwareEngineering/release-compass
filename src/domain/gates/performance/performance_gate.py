@@ -17,7 +17,7 @@ class ViolationPeriod:
 
 @dataclass
 class MetricSummary:
-    """Summary statistics shared by response time, CPU, and memory metrics."""
+    """Summary statistics of a measured metric, such as response time."""
 
     source: str
     unit: str
@@ -70,7 +70,6 @@ class TransactionPerformance:
     name: str
     response_time: ResponseTimeMetric | None
     request_outcomes: RequestOutcomes | None = None
-    nfr_status: int | None = None
     throughput: ThroughputMetric | None = None
 
 
@@ -92,16 +91,6 @@ class ThroughputMetric:
 
 
 @dataclass
-class ResourceMetric:
-    """CPU or memory summary for the run or a service/component."""
-
-    summary: MetricSummary
-    assessment: MetricAssessment = field(default_factory=MetricAssessment)
-    timeseries: list[dict[str, object]] = field(default_factory=list)
-    linear_trend: list[dict[str, object]] = field(default_factory=list)
-
-
-@dataclass
 class PerformanceGate(Gate):
     """Performance evidence normalized from a single report/run."""
 
@@ -109,8 +98,4 @@ class PerformanceGate(Gate):
     throughput: ThroughputMetric | None = None
     request_outcomes: RequestOutcomes | None = None
     transactions: dict[str, TransactionPerformance] = field(default_factory=dict)
-    cpu: ResourceMetric | None = None
-    cpu_components: dict[str, ResourceMetric] = field(default_factory=dict)
-    memory: ResourceMetric | None = None
-    memory_components: dict[str, ResourceMetric] = field(default_factory=dict)
     provider_assessments: dict[str, object] = field(default_factory=dict)
