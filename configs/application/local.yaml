@@ -1,11 +1,11 @@
 system:
   db_path: data/database/release_compass.sqlite3
 
+ingestion:
+  mappings:
+    locust: configs/ingestion/locust.yaml
+
 data:
   reports:
-    - path: data/raw/reports/example_reports/synthetic_report.html
-      generated_at_date: "2026-09-02"
-      generated_at_time: "08:44:23"
-    - path: data/raw/reports/example_reports/report.html
-      generated_at_date: "2026-09-02"
-      generated_at_time: "08:44:22"
+    - path: data/raw/reports/example_reports/loctus/loctus_performance_report.html
+      source: locust

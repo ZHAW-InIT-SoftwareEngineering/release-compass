@@ -9,7 +9,10 @@ from langchain_core.language_models.fake_chat_models import FakeMessagesListChat
 from src.chat_session import build_chat_session
 from src.configs.application.local import LocalConfig
 
-EXAMPLE_REPORT = Path("data/raw/reports/example_reports/report.html")
+EXAMPLE_REPORT = Path(
+    "data/raw/reports/example_reports/loctus/loctus_performance_report.html"
+)
+LOCUST_MAPPING = Path("configs/ingestion/locust.yaml")
 
 
 class BuildChatSessionTests(unittest.TestCase):
@@ -24,7 +27,11 @@ class BuildChatSessionTests(unittest.TestCase):
 
     def local_config(self, reports):
         return LocalConfig.model_validate(
-            {"system": {"db_path": self.db_path}, "data": {"reports": reports}}
+            {
+                "system": {"db_path": self.db_path},
+                "ingestion": {"mappings": {"locust": LOCUST_MAPPING}},
+                "data": {"reports": reports},
+            }
         )
 
     def build(self, reports):
@@ -38,15 +45,7 @@ class BuildChatSessionTests(unittest.TestCase):
             return build_chat_session()
 
     def test_builds_a_graph_ready_to_chat_about_the_latest_report(self):
-        session = self.build(
-            [
-                {
-                    "path": EXAMPLE_REPORT,
-                    "generated_at_date": "2026-09-02",
-                    "generated_at_time": "08:44:22",
-                }
-            ]
-        )
+        session = self.build([{"path": EXAMPLE_REPORT, "source": "locust"}])
 
         report_id = session.trace_metadata["current_report_id"]
         self.assertIn(report_id, session.system_prompt)
