@@ -98,4 +98,3 @@ class PerformanceGate(Gate):
     throughput: ThroughputMetric | None = None
     request_outcomes: RequestOutcomes | None = None
     transactions: dict[str, TransactionPerformance] = field(default_factory=dict)
-    provider_assessments: dict[str, object] = field(default_factory=dict)

@@ -103,8 +103,6 @@ class HTMLReportTests(unittest.TestCase):
         self.assertEqual(health.response_time.p90, 1500)
         self.assertEqual(health.response_time.start_time, "2026-10-26T15:11:52Z")
 
-        self.assertEqual(gate.provider_assessments, {})
-
     def test_reads_json_from_html_attribute(self):
         mapping = _mapping(
             {"kind": "attribute", "attribute": "data-raw"},

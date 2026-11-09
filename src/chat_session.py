@@ -6,10 +6,10 @@ from langgraph.graph.state import CompiledStateGraph
 
 from src.adapters.outbound.html_report import HTMLReport
 from src.adapters.outbound.sqlite_report_repository import SQLiteReportRepository
+from src.adapters.outbound.yaml_target_source import YamlTargetSource
 from src.application.performance_assessment import build_performance_assessment_service
 from src.application.use_cases.import_reports import ReportInput, import_reports
 from src.configs.application.local import load_local_config
-from src.configs.gates.performance.performance_gate import load_performance_gate_config
 from src.configs.ingestion.html_mapping import load_html_mapping
 from src.configs.llm.llm_config import load_llm_config
 from src.domain.gates.performance.serialization import PERFORMANCE_DOMAIN_TYPES
@@ -65,7 +65,7 @@ def build_chat_session() -> ChatSession:
     current_report = max(reports, key=report_order)
     assessments = build_performance_assessment_service(
         report_repository,
-        load_performance_gate_config(PERFORMANCE_CONFIG_PATH),
+        YamlTargetSource(PERFORMANCE_CONFIG_PATH).targets(),
     )
     assessments.prepare()
 

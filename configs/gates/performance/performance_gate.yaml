@@ -1,10 +1,19 @@
+# Performance Gate targets (ADR 0012). Every key is required; null = unbounded.
+# Schema: src/configs/gates/targets.py; supported metrics and aggregations:
+# src/domain/gates/performance/measurements.py (SUPPORTED).
+#
+# All values below are adjustable DUMMY values, not agreed requirements.
+# - target: the range each transaction (or the run, for throughput) must meet.
+# - score: the share of requests that must meet the target. The same 0.8 is
+#   used for every metric for consistency until real thresholds are defined.
+
 metrics:
   response_time:
-    operator: ">="
-    score: 0.8
-  throughput:
-    operator: ">="
-    score: 0.8
+    target: { aggregation: p90, unit: ms, min: null, max: 3000 }  # dummy
+    score: 0.8  # dummy, adjustable
   request_outcomes:
-    operator: ">="
-    score: 0.8
+    target: { aggregation: failure_rate_percent, unit: "%", min: null, max: 1.0 }  # dummy
+    score: 0.8  # dummy, adjustable
+  throughput:
+    target: { aggregation: tps, unit: req/s, min: 40, max: null }  # dummy
+    score: 0.8  # dummy, adjustable

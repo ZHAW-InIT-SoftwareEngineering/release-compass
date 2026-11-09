@@ -2,7 +2,7 @@ import copy
 import json
 import tempfile
 import unittest
-from dataclasses import replace
+from dataclasses import asdict, replace
 from pathlib import Path
 from unittest.mock import Mock
 from uuid import uuid4
@@ -18,20 +18,10 @@ from src.application.use_cases.assess_reports import (
 )
 from src.application.use_cases.compare_gate import ReportNotFoundError
 from src.application.use_cases.import_reports import ReportInput, import_reports
-from src.configs.gates.performance.performance_gate import PerformanceGateConfig
 from src.configs.ingestion.html_mapping import load_html_mapping
-from src.domain.assessment import (
-    GateAcceptance,
-    GateDefinition,
-    combine_outcomes,
-)
+from src.domain.assessment import GateAcceptance, GateDefinition
 from src.domain.deltas.performance_comparison import compare_performance_values
 from src.domain.gates.gate import Gate
-from src.domain.gates.performance.assessment import (
-    METRICS,
-    POLICY_VERSION,
-    assess_performance,
-)
 from src.domain.gates.performance.performance_gate import (
     PerformanceGate,
     RequestOutcomes,
@@ -41,17 +31,23 @@ from src.domain.gates.performance.performance_gate import (
 )
 from src.domain.gates.performance.serialization import PERFORMANCE_DOMAIN_TYPES
 from src.domain.report import Report
+from src.domain.scoring import POLICY_VERSION
+from src.domain.targets import MetricTarget, TargetRange
 from src.harness.tools.build_tools import build_tools
 
 
-def config(threshold=0.8):
-    return PerformanceGateConfig.model_validate(
-        {
-            "metrics": {
-                name: {"operator": ">=", "score": threshold} for name in METRICS
-            },
-        }
-    )
+def targets(score=0.8):
+    return {
+        "response_time": MetricTarget(
+            "response_time", "p90", "ms", TargetRange(None, 3000), score
+        ),
+        "request_outcomes": MetricTarget(
+            "request_outcomes", "failure_rate_percent", "%", TargetRange(None, 1), score
+        ),
+        "throughput": MetricTarget(
+            "throughput", "tps", "req/s", TargetRange(40, None), score
+        ),
+    }
 
 
 def repository_for(test, path=":memory:"):
@@ -60,71 +56,44 @@ def repository_for(test, path=":memory:"):
     return repository
 
 
-def assessment_service(repository, gate_config=None, gate_definitions=None):
-    selected_config = gate_config or config()
+def assessment_service(repository, gate_targets=None, gate_definitions=None):
+    selected_targets = gate_targets or targets()
     if gate_definitions is None:
-        return build_performance_assessment_service(repository, selected_config)
+        return build_performance_assessment_service(repository, selected_targets)
     return AssessmentService(
         repository,
         gate_definitions,
         {
-            "performance": selected_config.model_dump(),
+            "performance": {
+                name: asdict(target) for name, target in selected_targets.items()
+            },
             "policy_version": POLICY_VERSION,
         },
     )
 
 
-def explicit_gate(score=0.9):
-    return PerformanceGate(
-        provider_assessments={
-            "performance_gate": {
-                "passing": False,
-                "metrics": {
-                    name: {"score": score, "threshold": 0.99, "passing": False}
-                    for name in METRICS
-                },
-            },
-        }
-    )
+def scored_gate(score=0.9):
+    """A gate whose response-time score is ``score``; other metrics pass."""
+    fast_requests = round(score * 100)
+    gate = PerformanceGate(throughput=ThroughputMetric("overall", "req/s", tps=100))
+    for name, requests, p90 in (
+        ("fast", fast_requests, 100),
+        ("slow", 100 - fast_requests, 5000),
+    ):
+        gate.transactions[name] = TransactionPerformance(
+            name,
+            ResponseTimeMetric("test", "ms", requests, 10, p90=p90),
+            RequestOutcomes(requests, 0, requests, 0),
+        )
+    return gate
 
 
 def report(gate=None, time="08:00:00"):
     return Report(
         generated_at_date="2026-09-02",
         generated_at_time=time,
-        gates=[gate or explicit_gate()],
+        gates=[gate or scored_gate()],
     )
-
-
-def weighted_gate():
-    gate = PerformanceGate()
-    for name in ("A", "B"):
-        gate.transactions[name] = TransactionPerformance(
-            name,
-            ResponseTimeMetric("test", "ms", 10, 10),
-            RequestOutcomes(10, 0, 10, 0),
-            throughput=ThroughputMetric(name, "req/s"),
-        )
-        gate.transactions[name].throughput.assessment.status = 2
-    gate.provider_assessments = {
-        "statuses": {"red": 0, "amber": 1, "green": 2},
-        "nfr_compliance": {
-            "weights": {"red": 1, "amber": 0.5, "green": 0},
-        },
-        "transaction_health": {
-            "per_transaction": {
-                "A": {
-                    "transaction_weight": 3,
-                    "components": {"local_nfr": 0, "failure_transactions_rate": 0},
-                },
-                "B": {
-                    "transaction_weight": 1,
-                    "components": {"local_nfr": 1, "failure_transactions_rate": 1},
-                },
-            },
-        },
-    }
-    return gate
 
 
 class ImportTests(unittest.TestCase):
@@ -135,7 +104,7 @@ class ImportTests(unittest.TestCase):
         self.path.write_text("first")
         self.repository = repository_for(self)
         self.ingestion = Mock()
-        self.ingestion.ingest.side_effect = lambda *_: Report(gates=[explicit_gate()])
+        self.ingestion.ingest.side_effect = lambda *_: Report(gates=[scored_gate()])
 
     def inputs(self, time="08:00:00"):
         return [ReportInput(self.path, "2026-09-02", time, source="test")]
@@ -241,114 +210,13 @@ class ImportTests(unittest.TestCase):
             self.repository.save(stored)
 
 
-class AssessmentTests(unittest.TestCase):
-    def setUp(self):
-        self.thresholds = {name: 0.8 for name in METRICS}
-
-    def test_explicit_scores_take_precedence_and_config_controls_outcome(self):
-        gate = explicit_gate(0.8)
-        acceptance = assess_performance(gate, self.thresholds)
-        self.assertEqual(acceptance.outcome, "pass")
-        self.assertEqual(
-            acceptance.metrics["response_time"].provider_evidence["threshold"], 0.99
-        )
-        gate.provider_assessments["performance_gate"]["metrics"]["response_time"][
-            "score"
-        ] = 0.79
-        self.assertEqual(assess_performance(gate, self.thresholds).outcome, "fail")
-
-    def test_invalid_or_missing_explicit_score_is_unknown_without_fallback(self):
-        for invalid in (None, True, -0.1, 1.1, float("nan"), float("inf"), "0.9"):
-            with self.subTest(invalid=invalid):
-                gate = explicit_gate()
-                gate.provider_assessments["performance_gate"]["metrics"][
-                    "response_time"
-                ]["score"] = invalid
-                result = assess_performance(gate, self.thresholds)
-                self.assertEqual(result.metrics["response_time"].outcome, "unknown")
-
-    def test_weighted_penalties_use_provider_values(self):
-        result = assess_performance(weighted_gate(), self.thresholds)
-        self.assertEqual(result.metrics["response_time"].score, 0.75)
-        self.assertEqual(result.metrics["request_outcomes"].score, 0.75)
-        self.assertEqual(result.metrics["throughput"].score, 1)
-
-    def test_throughput_status_weights_and_unevaluable_source(self):
-        gate = weighted_gate()
-        gate.transactions["B"].throughput.assessment.status = 1
-        result = assess_performance(gate, self.thresholds)
-        self.assertEqual(result.metrics["throughput"].score, 0.875)
-        gate.transactions["B"].throughput.supporting_evidence["load_nfr_details"] = {
-            "not_evaluable": True
-        }
-        self.assertEqual(
-            assess_performance(gate, self.thresholds).metrics["throughput"].outcome,
-            "unknown",
-        )
-
-    def test_missing_weights_are_unknown_and_zero_weight_is_excluded(self):
-        gate = weighted_gate()
-        del gate.provider_assessments["transaction_health"]["per_transaction"]["B"][
-            "transaction_weight"
-        ]
-        self.assertEqual(
-            assess_performance(gate, self.thresholds).metrics["response_time"].outcome,
-            "unknown",
-        )
-        gate.provider_assessments["transaction_health"]["per_transaction"]["B"][
-            "transaction_weight"
-        ] = 0
-        gate.transactions["B"].throughput.supporting_evidence["load_nfr_details"] = {
-            "not_evaluable": True
-        }
-        result = assess_performance(gate, self.thresholds)
-        self.assertEqual(result.metrics["response_time"].score, 1)
-        self.assertEqual(result.metrics["throughput"].score, 1)
-        self.assertTrue(result.metrics["response_time"].sources[1].excluded)
-
-    def test_explicit_equal_weight_policy_and_empty_set(self):
-        gate = weighted_gate()
-        for item in gate.provider_assessments["transaction_health"][
-            "per_transaction"
-        ].values():
-            del item["transaction_weight"]
-        gate.provider_assessments["transaction_health"]["weights"] = {
-            "transaction_aggregation": {"mode": "equal"}
-        }
-        self.assertEqual(
-            assess_performance(gate, self.thresholds).metrics["response_time"].score,
-            0.5,
-        )
-        for item in gate.provider_assessments["transaction_health"][
-            "per_transaction"
-        ].values():
-            item["zero_observation"] = True
-        self.assertEqual(
-            assess_performance(gate, self.thresholds).metrics["response_time"].outcome,
-            "unknown",
-        )
-
-    def test_fail_and_unknown_never_satisfy_release_acceptance(self):
-        self.assertEqual(combine_outcomes(["pass", "unknown"]), "unknown")
-        self.assertEqual(combine_outcomes(["unknown", "fail"]), "fail")
-        self.assertEqual(combine_outcomes([]), "unknown")
-
-    def test_zero_observations_cannot_pass_with_positive_weight(self):
-        gate = weighted_gate()
-        gate.transactions["A"].response_time.observation_count = 0
-        gate.transactions["A"].request_outcomes.total_requests = 0
-        result = assess_performance(gate, self.thresholds)
-        self.assertEqual(result.metrics["response_time"].outcome, "unknown")
-        self.assertEqual(result.metrics["request_outcomes"].outcome, "unknown")
-
-
 class EvidenceTests(unittest.TestCase):
     def setUp(self):
         self.repository = repository_for(self)
         self.service = assessment_service(self.repository)
 
     def add(self, score=0.9, time="08:00:00", extra_gate=False):
-        result = report(explicit_gate(score), time)
+        result = report(scored_gate(score), time)
         if extra_gate:
             result.gates.append(Gate())
         self.repository.save(result)
@@ -453,12 +321,10 @@ class EvidenceTests(unittest.TestCase):
                 reopened.get_evidence(current.report_id, service.version),
             )
 
-    def test_nonfinite_provider_score_persists_as_unknown(self):
+    def test_missing_measured_value_persists_as_unknown(self):
         current = self.add()
         # The report has not been assessed yet, so update its legacy un-fingerprinted fixture.
-        current.gates[0].provider_assessments["performance_gate"]["metrics"][
-            "response_time"
-        ]["score"] = float("nan")
+        current.gates[0].transactions["fast"].response_time.p90 = None
         self.repository.save(current)
         self.service.prepare()
         self.assertEqual(
@@ -481,7 +347,7 @@ class EvidenceTests(unittest.TestCase):
         current = self.add(0.95, "09:00:00")
         self.service.prepare()
         original = self.service.get_evidence(current.report_id)
-        changed = assessment_service(self.repository, config(0.9))
+        changed = assessment_service(self.repository, targets(0.9))
         changed.prepare()
         revised = changed.get_evidence(current.report_id)
         self.assertNotEqual(original.assessment_version, revised.assessment_version)
@@ -508,7 +374,7 @@ class EvidenceTests(unittest.TestCase):
             self.repository.save(current)
 
     def test_missing_duplicate_and_unsupported_gates_do_not_pass(self):
-        for gates in ([], [Gate()], [explicit_gate(), explicit_gate()]):
+        for gates in ([], [Gate()], [scored_gate(), scored_gate()]):
             repository = repository_for(self)
             repository.save(
                 Report(
@@ -534,7 +400,7 @@ class EvidenceTests(unittest.TestCase):
 
 class ComparisonTests(unittest.TestCase):
     def test_deltas_units_and_missing_values(self):
-        baseline = weighted_gate()
+        baseline = scored_gate()
         baseline.response_time = ResponseTimeMetric(
             "overall", "ms", 10, 10, mean=100, p50=0
         )
@@ -586,7 +452,7 @@ class EvidenceToolTests(unittest.TestCase):
 
     def test_series_are_stored_fully_and_referenced_in_tool_output(self):
         repository = repository_for(self)
-        gate = explicit_gate()
+        gate = scored_gate()
         gate.response_time = ResponseTimeMetric(
             "overall",
             "ms",
@@ -654,6 +520,17 @@ class RealReportFlowTests(unittest.TestCase):
         assert gate.response_time is not None
         self.assertEqual(gate.response_time.observation_count, 33417)
         self.assertEqual(len(gate.transactions), 16)
+
+        service = assessment_service(repository)
+        service.prepare()
+        pack = service.get_evidence(imported.report_id)
+        metrics = pack.gates["PerformanceGate"].acceptance.metrics
+        self.assertEqual(pack.outcome, "fail")
+        self.assertEqual(metrics["response_time"].outcome, "fail")
+        self.assertEqual(metrics["request_outcomes"].outcome, "pass")
+        self.assertEqual(metrics["throughput"].outcome, "pass")
+        # Only the deposit transaction exceeds 1 % failures.
+        self.assertAlmostEqual(metrics["request_outcomes"].score, 1 - 2661 / 33417)
 
 
 if __name__ == "__main__":
