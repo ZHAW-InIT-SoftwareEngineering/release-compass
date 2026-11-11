@@ -19,6 +19,105 @@
 8. **What information is missing?** Distinguish unavailable evidence, an
    unavailable baseline, and an analysis that has not been performed.
 
+## KISS ontology
+
+Rendered from the hand-drawn sketch [ontology.png](ontology.png). Classes
+prefixed `ai2core:` are reused from AI-Square
+([ai-square-extended.ttl](../ai_sqaure_ontology/ai-square-extended.ttl)) with
+their declared attributes; `rc:` marks the release-compass extension, including
+attributes added to reused classes. Mermaid relation labels cannot contain a
+colon, so `precedes (ai2core)` means `ai2core:precedes`. `ai2core:has_id`
+applies to every class and is omitted.
+
+```mermaid
+%%{init: {"class": {"rankSpacing": 120, "nodeSpacing": 80}}}%%
+classDiagram
+    direction TB
+
+    class Report["rc:Report"] {
+        +rc:generated_at xsd:dateTime
+        +rc:ingestion_sequence xsd:integer
+        +rc:is_root xsd:boolean
+        +rc:outcome Outcome
+    }
+    class QualityGate["ai2core:QualityGate"] {
+        +rc:executed_at xsd:dateTime
+        +rc:outcome Outcome
+    }
+    class Requirement["ai2core:Requirement"] {
+        +ai2core:criticality xsd:string
+        +ai2core:created_on xsd:integer
+        +ai2core:last_modified_on xsd:integer
+        +ai2core:remote_url xsd:anyURI
+    }
+    class Target["ai2core:Target"] {
+        +ai2core:aggregation xsd:string
+        +ai2core:units xsd:string
+        +rc:description xsd:string
+        +rc:min xsd:decimal
+        +rc:max xsd:decimal
+        +rc:min_score xsd:decimal
+    }
+    class Metric["ai2core:Metric"] {
+        +ai2core:units xsd:string
+        +rc:value xsd:decimal
+        +rc:statistic xsd:string
+        +rc:request_count xsd:integer
+    }
+    class Source["ai2core:Source (transaction)"]
+    class Outcome["rc:Outcome"] {
+        <<enumeration>>
+        pass
+        fail
+        unknown
+    }
+
+    Report "0..1" --> "0..1" Report : previous_report (rc)
+    Report "*" --> "0..1" Report : baseline_report (rc)
+    Report "1" --> "1..*" QualityGate : contains_gate (rc)
+    QualityGate "*" --> "*" QualityGate : precedes (ai2core)
+    QualityGate "1" --> "1..*" Target : evaluated_by_requirement (ai2core)
+    QualityGate "*" --> "0..1" QualityGate : baseline_gate (rc)
+    QualityGate "1" --> "*" Metric : produces_metric (rc)
+    Metric "*" --> "1" Target : assessed_against (rc)
+    Metric "*" --> "1" Source : measured_from (rc)
+    Requirement <|-- Target
+```
+
+Changes from the sketch:
+
+- **One `QualityGate` node.** `ai2core:QualityGateExecution` is merged into
+  `ai2core:QualityGate`, which takes its `rc:executed_at` and `rc:outcome`. A
+  `QualityGate` instance is one gate run within a report, so
+  `ai2core:evaluates` is dropped and `rc:contains_execution` and
+  `rc:baseline_execution` become `rc:contains_gate` and `rc:baseline_gate`.
+  `rc:produces_metric` replaces `ai2core:produces_metric`, whose domain
+  `ai2core:QualityGateExecution` would otherwise be inferred for every gate.
+- **One `Target` node.** The two `RequirementTarget` boxes are merged.
+  `ai2core:Target` is a subclass of `ai2core:Requirement`, so it is a valid
+  range of `ai2core:evaluated_by_requirement`. A gate has several targets (one
+  per metric, ADR 0012), so the cardinality is `1..*`, not `1:1`.
+- **Assessing a metric.** `ai2core:aggregation` (e.g. `p90`) and the
+  `rc:min`/`rc:max` range answer “how is a metric assessed?” (ADR 0012).
+  A metric matches its target when `rc:statistic` equals the aggregation and
+  the units are equal. `description` and the range are `rc:` additions, since
+  AI-Square declares neither on `Target`.
+- **Metric is a measurement.** It is produced by one gate run
+  (`rc:produces_metric`, `1:*`), not shared `n:n` between gates.
+- **Metric maps directly to Source.** `ai2core:Observable` is removed.
+  `rc:measured_from` links each metric to its measured transaction for
+  per-transaction scoring. `ai2core:yield_from` is not reused because its
+  domain `ai2core:Observable` would reintroduce the removed class.
+- **Predecessor instead of child.** `rc:previous_report` with `rc:is_root`
+  keeps stored reports immutable when a new report arrives (ADR 0006, ADR 0008).
+- **Rules, not stored facts.** Report `rc:outcome` is the conjunction of its
+  gate outcomes (ADR 0005). `rc:baseline_report` and `rc:baseline_gate` are
+  selected by the latest-passing rule (ADR 0006); without a separate gate
+  definition, gates are comparable when they are evaluated by the same
+  targets.
+- **Not reused.** `ai2core:evaluated_by` is declared twice with different
+  domains, so only `ai2core:evaluated_by_requirement` is used.
+
 ## Proposed conceptual graph
 
 This is a **draft for discussion**, not an accepted architecture decision. The
