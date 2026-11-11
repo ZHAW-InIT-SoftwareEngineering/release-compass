@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import Literal
 
 from langchain.messages import AIMessage, ToolMessage
@@ -12,6 +12,7 @@ from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import ToolNode
 from langgraph.types import Command, interrupt
 
+from src.domain.assessment import Outcome
 from src.harness.state import HarnessState
 
 CICD_TOOL_NAME = "cicd_tool"
@@ -38,12 +39,20 @@ def _cicd_call(message: AIMessage) -> ToolCall:
     raise ValueError("The approval node requires a cicd_tool call.")
 
 
-def _cicd_refusal(state: HarnessState, message: AIMessage) -> str | None:
+def _cicd_refusal(
+    state: HarnessState, message: AIMessage, outcome: Outcome | None
+) -> str | None:
     """Return why the CI/CD request is refused without asking, or None."""
     if state.get("cicd_triggered", False):
         return "CI/CD was already triggered in this conversation. Only once possible per session."
     if len(message.tool_calls) != 1:
         return "Request one tool at a time. The CI/CD request was not run."
+    if outcome != "pass":
+        shown = outcome if outcome is not None else "missing"
+        return (
+            f"Deployment is unavailable: the current report's outcome is '{shown}', "
+            "not 'pass'. The CI/CD request was not run."
+        )
     return None
 
 
@@ -76,8 +85,13 @@ def build_graph(
     model_with_tools: Runnable[LanguageModelInput, AIMessage],
     tools: Sequence[BaseTool],
     checkpointer: MemorySaver,
+    deployment_outcome: Callable[[], Outcome | None],
 ) -> CompiledStateGraph[HarnessState, None, HarnessState, HarnessState]:
-    """Build a ReAct loop that pauses before executing the CI/CD tool."""
+    """Build a ReAct loop that pauses before executing the CI/CD tool.
+
+    ``deployment_outcome`` supplies the current report's deterministic outcome;
+    CI/CD is refused without asking unless it is ``"pass"``.
+    """
     graph = StateGraph(HarnessState)
     tool_node = ToolNode(tools, handle_tool_errors=_handle_tool_error)
 
@@ -98,7 +112,7 @@ def build_graph(
         message = _last_ai_message(state)
         call = _cicd_call(message)
 
-        refusal = _cicd_refusal(state, message)
+        refusal = _cicd_refusal(state, message, deployment_outcome())
         if refusal is not None:
             return _answer_calls(message.tool_calls, refusal)
 
