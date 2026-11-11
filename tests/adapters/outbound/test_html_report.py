@@ -9,7 +9,9 @@ from src.domain.gates.performance.performance_gate import PerformanceGate
 
 ROOT = Path(__file__).resolve().parents[3]
 LOCUST_REPORT = (
-    ROOT / "data/raw/reports/example_reports/loctus/loctus_performance_report.html"
+    ROOT
+    / "data/raw/reports/example_reports/TeaStoreReports/Locust"
+    / "Locust_TeaStore_Report_Original.html"
 )
 LOCUST_MAPPING = ROOT / "configs/ingestion/locust.yaml"
 
@@ -69,8 +71,8 @@ class HTMLReportTests(unittest.TestCase):
 
         self.assertIsInstance(report.report_id, UUID)
         self.assertEqual(report.source_path, str(LOCUST_REPORT))
-        self.assertEqual(report.generated_at_date, "2026-10-26")
-        self.assertEqual(report.generated_at_time, "15:23:53")
+        self.assertEqual(report.generated_at_date, "2026-11-10")
+        self.assertEqual(report.generated_at_time, "10:02:29")
         (gate,) = report.gates
         assert isinstance(gate, PerformanceGate)
         response_time = gate.response_time
@@ -81,27 +83,27 @@ class HTMLReportTests(unittest.TestCase):
         assert throughput is not None
 
         self.assertEqual(response_time.unit, "ms")
-        self.assertEqual(response_time.observation_count, 33417)
-        self.assertEqual(response_time.duration_seconds, 721)
-        self.assertEqual(response_time.p50, 1100)
-        self.assertEqual(response_time.p90, 5400)
-        self.assertEqual(response_time.maximum, 62363)
-        self.assertEqual(response_time.supporting_evidence["p95"], 7400)
+        self.assertEqual(response_time.observation_count, 194700)
+        self.assertEqual(response_time.duration_seconds, 600)
+        self.assertEqual(response_time.p50, 130)
+        self.assertEqual(response_time.p90, 230)
+        self.assertEqual(response_time.maximum, 1154)
+        self.assertEqual(response_time.supporting_evidence["p95"], 250)
         history = response_time.supporting_evidence["history"]
         assert isinstance(history, list)
-        self.assertEqual(len(history), 144)
-        self.assertEqual(outcomes.failed_requests, 84)
-        self.assertEqual(outcomes.passed_requests, 33333)
-        self.assertAlmostEqual(outcomes.failure_rate_percent, 84 / 33417 * 100)
-        self.assertAlmostEqual(throughput.tps or 0, 46.3146, places=4)
+        self.assertEqual(len(history), 118)
+        self.assertEqual(outcomes.failed_requests, 0)
+        self.assertEqual(outcomes.passed_requests, 194700)
+        self.assertAlmostEqual(outcomes.failure_rate_percent, 0)
+        self.assertAlmostEqual(throughput.tps or 0, 324.3405, places=4)
 
-        self.assertEqual(len(gate.transactions), 16)
+        self.assertEqual(len(gate.transactions), 1129)
         self.assertNotIn("Aggregated", gate.transactions)
-        health = gate.transactions["GET /actuator/health"]
+        health = gate.transactions["/tools.descartes.teastore.webui/"]
         assert health.response_time is not None
-        self.assertEqual(health.name, "GET /actuator/health")
-        self.assertEqual(health.response_time.p90, 1500)
-        self.assertEqual(health.response_time.start_time, "2026-10-26T15:11:52Z")
+        self.assertEqual(health.name, "/tools.descartes.teastore.webui/")
+        self.assertEqual(health.response_time.p90, 170)
+        self.assertEqual(health.response_time.start_time, "2026-11-10T09:52:29Z")
 
     def test_reads_json_from_html_attribute(self):
         mapping = _mapping(

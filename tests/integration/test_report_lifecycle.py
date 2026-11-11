@@ -503,7 +503,8 @@ class RealReportFlowTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[2]
         report_path = (
             root
-            / "data/raw/reports/example_reports/loctus/loctus_performance_report.html"
+            / "data/raw/reports/example_reports/TeaStoreReports/Locust"
+            / "Locust_TeaStore_Report_Original.html"
         )
         ingestion = HTMLReport(
             {"locust": load_html_mapping(root / "configs/ingestion/locust.yaml")}
@@ -512,25 +513,25 @@ class RealReportFlowTests(unittest.TestCase):
             [ReportInput(report_path, source="locust")], ingestion, repository
         )
         stored = repository.get_by_id(imported.report_id)
-        self.assertEqual(stored.generated_at_date, "2026-10-26")
-        self.assertEqual(stored.generated_at_time, "15:23:53")
+        self.assertEqual(stored.generated_at_date, "2026-11-10")
+        self.assertEqual(stored.generated_at_time, "10:02:29")
         self.assertEqual(stored.source_paths, [str(report_path)])
         gate = stored.gates[0]
         assert isinstance(gate, PerformanceGate)
         assert gate.response_time is not None
-        self.assertEqual(gate.response_time.observation_count, 33417)
-        self.assertEqual(len(gate.transactions), 16)
+        self.assertEqual(gate.response_time.observation_count, 194700)
+        self.assertEqual(len(gate.transactions), 1129)
 
         service = assessment_service(repository)
         service.prepare()
         pack = service.get_evidence(imported.report_id)
         metrics = pack.gates["PerformanceGate"].acceptance.metrics
-        self.assertEqual(pack.outcome, "fail")
-        self.assertEqual(metrics["response_time"].outcome, "fail")
+        self.assertEqual(pack.outcome, "pass")
+        self.assertEqual(metrics["response_time"].outcome, "pass")
         self.assertEqual(metrics["request_outcomes"].outcome, "pass")
         self.assertEqual(metrics["throughput"].outcome, "pass")
-        # Only the deposit transaction exceeds 1 % failures.
-        self.assertAlmostEqual(metrics["request_outcomes"].score, 1 - 2661 / 33417)
+        # No request failed, so every transaction stays below 1 % failures.
+        self.assertAlmostEqual(metrics["request_outcomes"].score, 1)
 
 
 if __name__ == "__main__":
