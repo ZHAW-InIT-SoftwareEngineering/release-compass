@@ -10,7 +10,7 @@ from src.chat_session import build_chat_session
 from src.configs.application.local import LocalConfig
 
 EXAMPLE_REPORT = Path(
-    "data/raw/reports/example_reports/loctus/loctus_performance_report.html"
+    "data/raw/reports/example_reports/TeaStoreReports/Locust/Locust_TeaStore_Report_Original.html"
 )
 LOCUST_MAPPING = Path("configs/ingestion/locust.yaml")
 

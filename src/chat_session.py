@@ -8,10 +8,13 @@ from src.adapters.outbound.html_report import HTMLReport
 from src.adapters.outbound.sqlite_report_repository import SQLiteReportRepository
 from src.adapters.outbound.yaml_target_source import YamlTargetSource
 from src.application.performance_assessment import build_performance_assessment_service
+from src.application.use_cases.assess_reports import EvidenceUnavailableError
+from src.application.use_cases.compare_gate import ReportNotFoundError
 from src.application.use_cases.import_reports import ReportInput, import_reports
 from src.configs.application.local import load_local_config
 from src.configs.ingestion.html_mapping import load_html_mapping
 from src.configs.llm.llm_config import load_llm_config
+from src.domain.assessment import Outcome
 from src.domain.gates.performance.serialization import PERFORMANCE_DOMAIN_TYPES
 from src.domain.history import report_order
 from src.harness.graph import build_graph
@@ -74,8 +77,15 @@ def build_chat_session() -> ChatSession:
     tools = build_tools(assessments)
     model_with_tools = llm.bind_tools(tools)
 
+    def current_outcome() -> Outcome | None:
+        """Return the current report's outcome; None when evidence is missing."""
+        try:
+            return assessments.get_evidence(current_report.report_id).outcome
+        except ReportNotFoundError, EvidenceUnavailableError:
+            return None
+
     # One checkpointer for the process; conversations are separated by thread_id.
-    graph = build_graph(model_with_tools, tools, MemorySaver())
+    graph = build_graph(model_with_tools, tools, MemorySaver(), current_outcome)
 
     return ChatSession(
         graph=graph,

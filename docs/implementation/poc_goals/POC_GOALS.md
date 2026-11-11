@@ -5,7 +5,7 @@
 The proof of concept assesses one quality gate: **Performance**. Given a
 current test run and a selected baseline, it produces deterministic,
 traceable evidence that a conversational agent can explain to a user. The
-reference input is [the example report](../../example_reports/report.html).
+reference input is [the example report](../../../data/raw/reports/example_reports/report.html).
 
 This document defines the POC contract; it does not prescribe production
 threshold values. Thresholds remain gate configuration and must be retained in

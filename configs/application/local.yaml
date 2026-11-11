@@ -7,5 +7,13 @@ ingestion:
 
 data:
   reports:
-    - path: data/raw/reports/example_reports/loctus/loctus_performance_report.html
+    - path: data/raw/reports/example_reports/TeaStoreReports/Locust/Locust_TeaStore_Report_Original.html
+      source: locust
+    - path: data/raw/reports/example_reports/TeaStoreReports/Locust/Locust_TeaStore_Report_Original_Noise_1.html
+      source: locust
+    - path: data/raw/reports/example_reports/TeaStoreReports/Locust/Locust_TeaStore_Report_Original_Noise_2.html
+      source: locust
+    - path: data/raw/reports/example_reports/TeaStoreReports/Locust/Locust_TeaStore_Report_Original_Noise_3.html
+      source: locust
+    - path: data/raw/reports/example_reports/TeaStoreReports/Locust/Locust_TeaStore_Report_Original_Noise_4.html
       source: locust

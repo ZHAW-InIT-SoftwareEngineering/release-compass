@@ -37,7 +37,7 @@ class ToolErrorTests(unittest.TestCase):
             AIMessage(content="Handled comparison result"),
         ]
         tool = build_compare_gate_tool(self.reader, PerformanceGate)
-        result = build_graph(model, [tool], MemorySaver()).invoke(
+        result = build_graph(model, [tool], MemorySaver(), lambda: "pass").invoke(
             {"messages": [HumanMessage(content="Compare the reports")]},
             {"configurable": {"thread_id": "tool-errors"}},
         )
