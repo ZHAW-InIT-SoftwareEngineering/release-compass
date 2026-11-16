@@ -83,12 +83,10 @@ classDiagram
         unknown
     }
 
-    Report "0..1" --> "0..1" Report : previous_report (release-compass)
-    Report "*" --> "0..1" Report : baseline_report (release-compass)
+    Report --> Report : previous_report 0..1 / baseline_report 0..1 (release-compass)
     Report "1" --> "1..*" QualityGate : contains_gate (release-compass)
-    QualityGate "*" --> "*" QualityGate : precedes (ai2core)
+    QualityGate --> QualityGate : precedes * (ai2core) / baseline_gate 0..1 (release-compass)
     QualityGate "1" --> "1..*" Target : evaluated_by_requirement (ai2core)
-    QualityGate "*" --> "0..1" QualityGate : baseline_gate (release-compass)
     QualityGate "1" --> "*" Metric : produces_metric (release-compass)
     QualityGate "1" --> "1..*" MetricAssessment : has_assessment (release-compass)
     MetricAssessment "*" --> "1" Target : assesses (release-compass)
@@ -96,6 +94,11 @@ classDiagram
     Metric "*" --> "1" Source : measured_from (release-compass)
     Requirement <|-- Target
 ```
+
+Mermaid draws self-links on one path, so each self-arrow carries two
+properties: `Report` to `Report` is `previous_report` and `baseline_report`;
+`QualityGate` to `QualityGate` is `precedes` and `baseline_gate`. The number
+after each name is its target multiplicity.
 
 Changes from the sketch:
 
