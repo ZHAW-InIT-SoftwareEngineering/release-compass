@@ -4,7 +4,7 @@ Date: 2026-10-07
 
 ## Status
 
-Accepted; storage superseded by 0013
+Accepted; evidence packs superseded by 0013
 
 ## Decision
 

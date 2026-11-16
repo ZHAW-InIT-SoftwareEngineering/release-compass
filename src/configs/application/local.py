@@ -5,7 +5,8 @@ from pydantic import BaseModel, model_validator
 
 
 class SystemConfig(BaseModel):
-    db_path: Path
+    # Folder of the knowledge base Turtle files, e.g. facts.ttl (ADR 0013).
+    kb_dir: Path
 
 
 class IngestionConfig(BaseModel):

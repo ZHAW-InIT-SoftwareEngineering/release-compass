@@ -1,5 +1,5 @@
 system:
-  db_path: data/database/release_compass.sqlite3
+  kb_dir: data/kb
 
 ingestion:
   mappings:

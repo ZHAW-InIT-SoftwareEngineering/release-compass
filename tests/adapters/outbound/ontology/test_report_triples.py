@@ -1,28 +1,17 @@
 import unittest
-from dataclasses import replace
 from datetime import UTC, datetime
-from uuid import UUID
 
 from rdflib import RDF, XSD, Literal
 
-from src.adapters.outbound.ontology.release_compass_ontology import RELEASE_COMPASS
-from src.adapters.outbound.ontology.report_triples import report_iri, report_triples
-from src.domain.report import Report
-
-REPORT_ID = UUID("3f2a6c1e-0000-4000-8000-000000000001")
-
-
-def _report(**overrides) -> Report:
-    report = Report(
-        report_id=REPORT_ID,
-        source_path="data/raw/report.html",
-        generated_at_date="2026-11-09",
-        generated_at_time="14:03:00",
-        source_fingerprint="9b1c",
-        ingestion_sequence=4,
-        source_paths=["data/raw/report.html", "data/raw/renamed.html"],
-    )
-    return replace(report, **overrides)
+from src.adapters.outbound.ontology.release_compass_ontology import (
+    AI2CORE,
+    RELEASE_COMPASS,
+    gate_iri,
+    report_iri,
+)
+from src.adapters.outbound.ontology.report_triples import report_triples
+from tests.adapters.outbound.ontology.examples import REPORT_ID
+from tests.adapters.outbound.ontology.examples import report as _report
 
 
 class ReportTriplesTests(unittest.TestCase):
@@ -37,6 +26,7 @@ class ReportTriplesTests(unittest.TestCase):
         graph = report_triples(_report())
         node = report_iri(REPORT_ID)
         self.assertIn((node, RDF.type, RELEASE_COMPASS.Report), graph)
+        self.assertEqual(graph.value(node, AI2CORE.has_id), Literal(str(REPORT_ID)))
         self.assertEqual(
             graph.value(node, RELEASE_COMPASS.generated_at),
             Literal(datetime(2026, 11, 9, 14, 3, tzinfo=UTC), datatype=XSD.dateTime),
@@ -65,11 +55,21 @@ class ReportTriplesTests(unittest.TestCase):
                 source_paths=[],
                 source_fingerprint=None,
                 ingestion_sequence=None,
+                gates=[],
             )
         )
         self.assertEqual(
-            set(graph.predicates()), {RDF.type, RELEASE_COMPASS.generated_at}
+            set(graph.predicates()),
+            {RDF.type, AI2CORE.has_id, RELEASE_COMPASS.generated_at},
         )
+
+    def test_includes_its_gates(self):
+        graph = report_triples(_report())
+        gate = gate_iri(REPORT_ID, "performance")
+        self.assertIn(
+            (report_iri(REPORT_ID), RELEASE_COMPASS.contains_gate, gate), graph
+        )
+        self.assertIn((gate, RDF.type, AI2CORE.QualityGate), graph)
 
     def test_requires_a_complete_timestamp(self):
         with self.assertRaisesRegex(ValueError, "complete generated-at"):

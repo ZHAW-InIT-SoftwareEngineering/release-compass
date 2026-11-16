@@ -1,4 +1,4 @@
-import rdflib 
+import rdflib
 
 
 g = rdflib.Graph()

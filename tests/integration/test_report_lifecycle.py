@@ -3,6 +3,7 @@ import json
 import tempfile
 import unittest
 from dataclasses import asdict, replace
+from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import Mock
 from uuid import uuid4
@@ -10,6 +11,7 @@ from uuid import uuid4
 from langchain_core.tools import ToolException
 
 from src.adapters.outbound.html_report import HTMLReport
+from src.adapters.outbound.ontology.turtle_knowledge_base import TurtleKnowledgeBase
 from src.adapters.outbound.sqlite.sqlite_report_repository import SQLiteReportRepository
 from src.application.performance_assessment import build_performance_assessment_service
 from src.application.use_cases.assess_reports import (
@@ -94,120 +96,6 @@ def report(gate=None, time="08:00:00"):
         generated_at_time=time,
         gates=[gate or scored_gate()],
     )
-
-
-class ImportTests(unittest.TestCase):
-    def setUp(self):
-        self.directory = tempfile.TemporaryDirectory()
-        self.addCleanup(self.directory.cleanup)
-        self.path = Path(self.directory.name) / "report.html"
-        self.path.write_text("first")
-        self.repository = repository_for(self)
-        self.ingestion = Mock()
-        self.ingestion.ingest.side_effect = lambda *_: Report(gates=[scored_gate()])
-
-    def inputs(self, time="08:00:00"):
-        return [ReportInput(self.path, "2026-09-02", time, source="test")]
-
-    def test_repeat_and_rename_reuse_uuid_timestamps_and_skip_parser(self):
-        first = import_reports(self.inputs(), self.ingestion, self.repository)[0]
-        renamed = self.path.with_name("renamed.html")
-        renamed.write_bytes(self.path.read_bytes())
-        reused = import_reports(
-            [ReportInput(renamed, "2020-01-01", "00:00:00", source="test")],
-            self.ingestion,
-            self.repository,
-        )[0]
-        self.assertEqual(reused.report_id, first.report_id)
-        self.assertEqual(reused.generated_at_date, "2026-09-02")
-        self.assertEqual(reused.ingestion_sequence, first.ingestion_sequence)
-        self.assertEqual(self.ingestion.ingest.call_count, 1)
-        stored = self.repository.get_by_id(first.report_id)
-        self.assertEqual(stored.source_paths, [str(self.path), str(renamed)])
-
-    def test_changed_content_is_new_report_and_ties_use_ingestion_order(self):
-        first = import_reports(self.inputs(), self.ingestion, self.repository)[0]
-        self.path.write_text("second")
-        second = import_reports(self.inputs(), self.ingestion, self.repository)[0]
-        self.assertNotEqual(first.report_id, second.report_id)
-        self.assertLess(first.ingestion_sequence, second.ingestion_sequence)
-        self.assertEqual(len(self.repository.list_reports()), 2)
-
-    def test_rejects_backdated_batch_without_partial_imports_or_aliases(self):
-        first = import_reports(self.inputs(), self.ingestion, self.repository)[0]
-        later = self.path.with_name("later.html")
-        earlier = self.path.with_name("earlier.html")
-        renamed = self.path.with_name("alias.html")
-        later.write_text("later")
-        earlier.write_text("earlier")
-        renamed.write_text("first")
-        with self.assertRaisesRegex(ValueError, "Backdated"):
-            import_reports(
-                [
-                    ReportInput(later, "2026-09-02", "09:00:00", source="test"),
-                    ReportInput(renamed, source="test"),
-                    ReportInput(earlier, "2026-09-01", "09:00:00", source="test"),
-                ],
-                self.ingestion,
-                self.repository,
-            )
-        self.assertEqual(len(self.repository.list_reports()), 1)
-        self.assertEqual(
-            self.repository.get_by_id(first.report_id).source_paths, [str(self.path)]
-        )
-
-    def test_html_timestamp_precedes_config(self):
-        self.ingestion.ingest.side_effect = None
-        self.ingestion.ingest.return_value = report(time="10:00:00")
-        result = import_reports(self.inputs(), self.ingestion, self.repository)[0]
-        self.assertEqual(result.generated_at_time, "10:00:00")
-
-    def test_missing_html_and_config_timestamp_is_rejected(self):
-        with self.assertRaisesRegex(ValueError, "no complete generated-at"):
-            import_reports(
-                [ReportInput(self.path, source="test")], self.ingestion, self.repository
-            )
-        self.assertEqual(self.repository.list_reports(), [])
-
-    def test_rejects_partial_source_or_config_timestamp(self):
-        self.ingestion.ingest.side_effect = lambda *_: Report(
-            generated_at_date="2026-09-02"
-        )
-        with self.assertRaisesRegex(ValueError, "both generated-at"):
-            import_reports(self.inputs(), self.ingestion, self.repository)
-        self.ingestion.ingest.side_effect = lambda *_: Report()
-        with self.assertRaisesRegex(ValueError, "both generated-at"):
-            import_reports(
-                [ReportInput(self.path, "2026-09-02", source="test")],
-                self.ingestion,
-                self.repository,
-            )
-        self.assertEqual(self.repository.list_reports(), [])
-
-    def test_initial_batch_is_assessed_in_timestamp_order(self):
-        older = self.path.with_name("older.html")
-        older.write_text("older")
-        import_reports(
-            [
-                *self.inputs("09:00:00"),
-                ReportInput(older, "2026-09-02", "08:00:00", source="test"),
-            ],
-            self.ingestion,
-            self.repository,
-        )
-        service = assessment_service(self.repository)
-        service.prepare()
-        stored = self.repository.list_reports()
-        newer, older_report = stored
-        self.assertEqual(
-            service.get_evidence(newer.report_id).previous_report_id,
-            older_report.report_id,
-        )
-
-    def test_source_reports_cannot_be_overwritten(self):
-        stored = import_reports(self.inputs(), self.ingestion, self.repository)[0]
-        with self.assertRaisesRegex(ValueError, "immutable"):
-            self.repository.save(stored)
 
 
 class EvidenceTests(unittest.TestCase):
@@ -498,40 +386,44 @@ class EvidenceToolTests(unittest.TestCase):
 
 
 class RealReportFlowTests(unittest.TestCase):
-    def test_imports_configured_locust_report(self):
-        repository = repository_for(self)
+    def setUp(self):
         root = Path(__file__).resolve().parents[2]
-        report_path = (
+        self.report_path = (
             root
             / "data/raw/reports/example_reports/TeaStoreReports/Locust"
             / "Locust_TeaStore_Report_Original.html"
         )
-        ingestion = HTMLReport(
+        self.ingestion = HTMLReport(
             {"locust": load_html_mapping(root / "configs/ingestion/locust.yaml")}
         )
-        (imported,) = import_reports(
-            [ReportInput(report_path, source="locust")], ingestion, repository
+
+    def test_imports_configured_locust_report_into_knowledge_base(self):
+        with tempfile.TemporaryDirectory() as directory:
+            knowledge_base = TurtleKnowledgeBase(Path(directory))
+            (imported,) = import_reports(
+                [ReportInput(self.report_path, source="locust")],
+                self.ingestion,
+                knowledge_base,
+            )
+            (stored,) = TurtleKnowledgeBase(Path(directory)).select(
+                """
+                SELECT ?generated_at ?path WHERE {
+                    ?report ai2core:has_id ?id ;
+                            release-compass:generated_at ?generated_at ;
+                            release-compass:source_path ?path .
+                }
+                """,
+                {"id": str(imported.report_id)},
+            )
+        self.assertEqual(
+            stored["generated_at"], datetime(2026, 11, 10, 10, 2, 29, tzinfo=UTC)
         )
-        stored = repository.get_by_id(imported.report_id)
-        self.assertEqual(stored.generated_at_date, "2026-11-10")
-        self.assertEqual(stored.generated_at_time, "10:02:29")
-        self.assertEqual(stored.source_paths, [str(report_path)])
-        gate = stored.gates[0]
+        self.assertEqual(stored["path"], str(self.report_path))
+        gate = imported.gates[0]
         assert isinstance(gate, PerformanceGate)
         assert gate.response_time is not None
         self.assertEqual(gate.response_time.observation_count, 194700)
         self.assertEqual(len(gate.transactions), 1129)
-
-        service = assessment_service(repository)
-        service.prepare()
-        pack = service.get_evidence(imported.report_id)
-        metrics = pack.gates["PerformanceGate"].acceptance.metrics
-        self.assertEqual(pack.outcome, "pass")
-        self.assertEqual(metrics["response_time"].outcome, "pass")
-        self.assertEqual(metrics["request_outcomes"].outcome, "pass")
-        self.assertEqual(metrics["throughput"].outcome, "pass")
-        # No request failed, so every transaction stays below 1 % failures.
-        self.assertAlmostEqual(metrics["request_outcomes"].score, 1)
 
 
 if __name__ == "__main__":

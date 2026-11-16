@@ -1,0 +1,19 @@
+# One gate run's measurements of a metric statistic, ordered by source like
+# src/domain/gates/performance/measurements.py.
+# Bindings: ?id (report ID), ?gate_type, ?metric, ?statistic.
+SELECT ?source ?path ?value ?unit ?weight
+WHERE {
+    ?report ai2core:has_id ?id ;
+            release-compass:contains_gate ?gate .
+    ?gate release-compass:gate_type ?gate_type ;
+          release-compass:produces_metric ?metric_node .
+    ?metric_node release-compass:metric_name ?metric ;
+                 release-compass:statistic ?statistic ;
+                 release-compass:field_path ?path ;
+                 release-compass:measured_from ?source_node .
+    ?source_node release-compass:source_name ?source .
+    OPTIONAL { ?metric_node release-compass:value ?value }
+    OPTIONAL { ?metric_node release-compass:unit ?unit }
+    OPTIONAL { ?metric_node release-compass:request_count ?weight }
+}
+ORDER BY ?source

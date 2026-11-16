@@ -44,6 +44,7 @@ classDiagram
         +release-compass:source_path xsd:string
     }
     class QualityGate["ai2core:QualityGate"] {
+        +release-compass:gate_type xsd:string
         +release-compass:executed_at xsd:dateTime
         +release-compass:outcome Outcome
     }
@@ -55,19 +56,23 @@ classDiagram
     }
     class Target["ai2core:Target"] {
         +ai2core:aggregation xsd:string
-        +ai2core:units xsd:string
+        +release-compass:metric_name xsd:string
+        +release-compass:unit xsd:string
         +release-compass:description xsd:string
         +release-compass:min xsd:decimal
         +release-compass:max xsd:decimal
         +release-compass:min_score xsd:decimal
     }
     class Metric["ai2core:Metric"] {
-        +ai2core:units xsd:string
         +release-compass:metric_name xsd:string
-        +release-compass:value xsd:decimal
         +release-compass:statistic xsd:string
-        +release-compass:request_count xsd:integer
+        +release-compass:value xsd:decimal
+        +release-compass:unit xsd:string
+        +release-compass:request_count xsd:decimal
+        +release-compass:field_path xsd:string
+        +release-compass:meets_target xsd:boolean
         +release-compass:excluded_reason xsd:string
+        +release-compass:reason xsd:string
     }
     class MetricAssessment["release-compass:MetricAssessment"] {
         +release-compass:score xsd:decimal
@@ -75,7 +80,9 @@ classDiagram
         +release-compass:reason xsd:string
         +release-compass:policy_version xsd:string
     }
-    class Source["ai2core:Source (transaction)"]
+    class Source["ai2core:Source (transaction)"] {
+        +release-compass:source_name xsd:string
+    }
     class Outcome["release-compass:Outcome"] {
         <<enumeration>>
         pass
@@ -124,6 +131,18 @@ Changes from the sketch:
   the metrics it scored (`based_on`), replacing the direct
   `Metric`–`Target` link, so results of different policy versions can coexist
   (ADR 0013).
+- **Own unit property.** `ai2core:units` declares two domains, `Metric` and
+  `Target`; RDFS reads them as both, so every metric with a unit would also
+  be a target. `release-compass:unit` replaces it (ADR 0014).
+- **Per-version results on metrics.** `meets_target`, `excluded_reason` and
+  `reason` on a `Metric` depend on the target, so they are stored in the
+  assessment file of their version, never with the report facts. The gate
+  outcome comes from Python scoring (`combine_outcomes`).
+- **Traceable measurements.** A metric stores exactly what scoring reads
+  (`src/domain/gates/performance/measurements.py`): `metric_name`,
+  `statistic`, `value`, `unit`, `request_count` (the scoring weight) and
+  `field_path`, its location in the parsed report. `gate_type` names the
+  gate; `source_name` names the transaction, or `overall` for run metrics.
 - **Provenance and exclusions.** `release-compass:source_fingerprint` and
   `release-compass:source_path` identify a report's HTML source (ADR 0008).
   `release-compass:metric_name` names what a metric measures, and
@@ -137,10 +156,10 @@ Changes from the sketch:
   domain `ai2core:Observable` would reintroduce the removed class.
 - **Predecessor instead of child.** `release-compass:previous_report` with `release-compass:is_root`
   keeps stored reports immutable when a new report arrives (ADR 0006, ADR 0008).
-- **Rules, not ingested facts.** Gate and report `release-compass:outcome`,
+- **Rules, not ingested facts.** Report `release-compass:outcome`,
   `release-compass:previous_report`, and the baselines are derived by SPARQL
   UPDATE rules into the assessment graph, never into the report facts
-  (ADR 0013). Report `release-compass:outcome` is the conjunction of its
+  (ADR 0013); gate outcomes come from Python scoring. Report `release-compass:outcome` is the conjunction of its
   gate outcomes (ADR 0005). `release-compass:baseline_report` and `release-compass:baseline_gate` are
   selected by the latest-passing rule (ADR 0006); without a separate gate
   definition, gates are comparable when they are evaluated by the same

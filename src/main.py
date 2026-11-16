@@ -19,6 +19,12 @@ def main() -> None:
 
 def _run() -> None:
     session = build_chat_session()
+    if session is None:
+        print(
+            "Reports imported into the knowledge base. Chat is disabled until "
+            "assessment reads from it."
+        )
+        return
     run_chat(
         Conversation(
             session.graph,

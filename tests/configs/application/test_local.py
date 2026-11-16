@@ -7,7 +7,7 @@ from src.configs.application.local import LocalConfig
 
 def config(reports, mappings=None):
     return {
-        "system": {"db_path": "db.sqlite3"},
+        "system": {"kb_dir": "data/kb"},
         "ingestion": {"mappings": mappings or {"locust": "locust.yaml"}},
         "data": {"reports": reports},
     }

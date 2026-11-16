@@ -17,9 +17,27 @@
 #################################################################
 #    Classes
 #################################################################
+# Reused AI-Square classes (ai2core:QualityGate, ai2core:Target,
+# ai2core:Metric, ai2core:Source) are referenced by IRI, not redeclared.
 
 release-compass:Report rdf:type owl:Class ;
     rdfs:comment "One imported test report (one HTML source) containing quality gate runs."@en .
+
+release-compass:MetricAssessment rdf:type owl:Class ;
+    rdfs:comment "The result of scoring one gate run against one target under one assessment version (ADR 0012)."@en .
+
+release-compass:Outcome rdf:type owl:Class ;
+    owl:oneOf ( release-compass:pass release-compass:fail release-compass:unknown ) ;
+    rdfs:comment "Three-valued result of a metric, gate or report (ADR 0005)."@en .
+
+
+#################################################################
+#    Individuals
+#################################################################
+
+release-compass:pass rdf:type owl:NamedIndividual , release-compass:Outcome .
+release-compass:fail rdf:type owl:NamedIndividual , release-compass:Outcome .
+release-compass:unknown rdf:type owl:NamedIndividual , release-compass:Outcome .
 
 
 #################################################################
@@ -31,18 +49,66 @@ release-compass:previous_report rdf:type owl:ObjectProperty , owl:FunctionalProp
     rdfs:range  release-compass:Report ;
     rdfs:comment "The chronologically preceding report (ADR 0008)."@en .
 
+release-compass:baseline_report rdf:type owl:ObjectProperty ;
+    rdfs:domain release-compass:Report ;
+    rdfs:range  release-compass:Report ;
+    rdfs:comment "The latest earlier passing report (ADR 0006); one per assessment version."@en .
+
+release-compass:contains_gate rdf:type owl:ObjectProperty ;
+    rdfs:domain release-compass:Report ;
+    rdfs:range  ai2core:QualityGate ;
+    rdfs:comment "A gate run that is part of the report."@en .
+
+release-compass:baseline_gate rdf:type owl:ObjectProperty ;
+    rdfs:domain ai2core:QualityGate ;
+    rdfs:range  ai2core:QualityGate ;
+    rdfs:comment "The latest earlier passing run of the same gate (ADR 0006); one per assessment version."@en .
+
+release-compass:produces_metric rdf:type owl:ObjectProperty ;
+    rdfs:domain ai2core:QualityGate ;
+    rdfs:range  ai2core:Metric ;
+    rdfs:comment "A measurement produced by the gate run; replaces ai2core:produces_metric, whose domain is ai2core:QualityGateExecution."@en .
+
+release-compass:measured_from rdf:type owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain ai2core:Metric ;
+    rdfs:range  ai2core:Source ;
+    rdfs:comment "The transaction (or the overall run) the metric was measured on; replaces ai2core:yield_from, whose domain is ai2core:Observable."@en .
+
+release-compass:has_assessment rdf:type owl:ObjectProperty ;
+    rdfs:domain ai2core:QualityGate ;
+    rdfs:range  release-compass:MetricAssessment ;
+    rdfs:comment "A metric assessment of the gate run."@en .
+
+release-compass:assesses rdf:type owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain release-compass:MetricAssessment ;
+    rdfs:range  ai2core:Target ;
+    rdfs:comment "The target the assessment scores against."@en .
+
+release-compass:based_on rdf:type owl:ObjectProperty ;
+    rdfs:domain release-compass:MetricAssessment ;
+    rdfs:range  ai2core:Metric ;
+    rdfs:comment "A measurement the score was computed from."@en .
+
+# Shared by Report, QualityGate and MetricAssessment, so no rdfs:domain.
+# Not functional: a report or gate has one outcome per assessment version.
+release-compass:outcome rdf:type owl:ObjectProperty ;
+    rdfs:range release-compass:Outcome ;
+    rdfs:comment "Pass, fail or unknown."@en .
+
 
 #################################################################
 #    Data properties
 #################################################################
 
 release-compass:generated_at rdf:type owl:DatatypeProperty , owl:FunctionalProperty ;
-    rdfs:domain release-compass:Report ; 
-    rdfs:range xsd:dateTime .
+    rdfs:domain release-compass:Report ;
+    rdfs:range xsd:dateTime ;
+    rdfs:comment "When the report was generated, in UTC (ADR 0009)."@en .
 
 release-compass:ingestion_sequence rdf:type owl:DatatypeProperty , owl:FunctionalProperty ;
     rdfs:domain release-compass:Report ;
-    rdfs:range  xsd:integer .
+    rdfs:range  xsd:integer ;
+    rdfs:comment "Import order; breaks ties between equal generation times (ADR 0008)."@en .
 
 release-compass:source_fingerprint rdf:type owl:DatatypeProperty , owl:FunctionalProperty ;
     rdfs:domain release-compass:Report ;
@@ -56,4 +122,95 @@ release-compass:source_path rdf:type owl:DatatypeProperty ;   # not functional: 
 
 release-compass:is_root rdf:type owl:DatatypeProperty , owl:FunctionalProperty ;
     rdfs:domain release-compass:Report ;
-    rdfs:range  xsd:boolean .
+    rdfs:range  xsd:boolean ;
+    rdfs:comment "True for the first report of the history (ADR 0008)."@en .
+
+release-compass:gate_type rdf:type owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain ai2core:QualityGate ;
+    rdfs:range  xsd:string ;
+    rdfs:comment "Which kind of gate ran, e.g. performance."@en .
+
+release-compass:executed_at rdf:type owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain ai2core:QualityGate ;
+    rdfs:range  xsd:dateTime ;
+    rdfs:comment "When the gate ran, if the report states it."@en .
+
+release-compass:source_name rdf:type owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain ai2core:Source ;
+    rdfs:range  xsd:string ;
+    rdfs:comment "Transaction name as in the report, or overall for run-level metrics."@en .
+
+# Shared by Metric and Target, so no rdfs:domain.
+release-compass:metric_name rdf:type owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:range xsd:string ;
+    rdfs:comment "What is measured or targeted, e.g. response_time."@en .
+
+# Replaces ai2core:units, whose two domains would make every Metric a Target.
+release-compass:unit rdf:type owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:range xsd:string ;
+    rdfs:comment "Unit of a metric value or target range, e.g. ms."@en .
+
+release-compass:statistic rdf:type owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain ai2core:Metric ;
+    rdfs:range  xsd:string ;
+    rdfs:comment "Aggregation of the value, e.g. p90; matches ai2core:aggregation of a target."@en .
+
+release-compass:value rdf:type owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain ai2core:Metric ;
+    rdfs:range  xsd:decimal ;
+    rdfs:comment "The measured value; absent when the report lacks it."@en .
+
+release-compass:request_count rdf:type owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain ai2core:Metric ;
+    rdfs:range  xsd:decimal ;
+    rdfs:comment "Weight of the value in scoring, e.g. the transaction's request count (ADR 0012)."@en .
+
+release-compass:field_path rdf:type owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain ai2core:Metric ;
+    rdfs:range  xsd:string ;
+    rdfs:comment "Where the value sits in the parsed report, e.g. transactions[Login].response_time.p90."@en .
+
+release-compass:meets_target rdf:type owl:DatatypeProperty ;
+    rdfs:domain ai2core:Metric ;
+    rdfs:range  xsd:boolean ;
+    rdfs:comment "Whether the value lies in the target range; stored per assessment version."@en .
+
+release-compass:excluded_reason rdf:type owl:DatatypeProperty ;
+    rdfs:domain ai2core:Metric ;
+    rdfs:range  xsd:string ;
+    rdfs:comment "Why the metric was left out of scoring, e.g. no observations; stored per assessment version."@en .
+
+release-compass:description rdf:type owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain ai2core:Target ;
+    rdfs:range  xsd:string ;
+    rdfs:comment "Human-readable description of the target."@en .
+
+release-compass:min rdf:type owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain ai2core:Target ;
+    rdfs:range  xsd:decimal ;
+    rdfs:comment "Inclusive lower bound; absent when unbounded (ADR 0012)."@en .
+
+release-compass:max rdf:type owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain ai2core:Target ;
+    rdfs:range  xsd:decimal ;
+    rdfs:comment "Inclusive upper bound; absent when unbounded (ADR 0012)."@en .
+
+release-compass:min_score rdf:type owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain ai2core:Target ;
+    rdfs:range  xsd:decimal ;
+    rdfs:comment "Lowest score at which the metric passes (ADR 0012)."@en .
+
+release-compass:score rdf:type owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain release-compass:MetricAssessment ;
+    rdfs:range  xsd:decimal ;
+    rdfs:comment "Weighted share of measurements meeting the target, 0 to 1; absent when unknown."@en .
+
+# Shared by MetricAssessment and Metric (why a value could not be scored).
+release-compass:reason rdf:type owl:DatatypeProperty ;
+    rdfs:range xsd:string ;
+    rdfs:comment "Why a result is unknown."@en .
+
+release-compass:policy_version rdf:type owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain release-compass:MetricAssessment ;
+    rdfs:range  xsd:string ;
+    rdfs:comment "Scoring policy that produced the assessment, e.g. target-ranges-v1."@en .
