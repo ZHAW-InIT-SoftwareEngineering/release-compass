@@ -2405,25 +2405,21 @@ crypto = [
 ]
 
 [[package]]
+name = "pyparsing"
+version = "3.3.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/e4/11/b213bebff182584360cb8d17c72c1677fec5c5c228de439e63bcf8ab1c8f/pyparsing-3.3.3.tar.gz", hash = "sha256:928ae7e20211f3b6f3915a72f06a0cfd29ab9d24279dd6346b6b1a7146397d36", size = 1050487, upload-time = "2026-09-20T20:59:05.609Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/38/bb/d215ee7c73b61497b28a5503f9f53523f294fcc936762b7caf90e0c1c2b5/pyparsing-3.3.3-py3-none-any.whl", hash = "sha256:ece8c00a69cf01b45d0b1dedabb469c90d8caf996d4fda40f147627a122849a4", size = 126420, upload-time = "2026-09-20T20:59:04.025Z" },
+]
+
+[[package]]
 name = "pyperclip"
 version = "1.11.0"
 source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/e8/52/d87eba7cb129b81563019d1679026e7a112ef76855d6159d24754dbd2a51/pyperclip-1.11.0.tar.gz", hash = "sha256:244035963e4428530d9e3a6101a1ef97209c6825edab1567beac148ccc1db1b6", size = 12185, upload-time = "2025-09-26T14:40:37.245Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/df/80/fc9d01d5ed37ba4c42ca2b55b4339ae6e200b456be3a1aaddf4a9fa99b8c/pyperclip-1.11.0-py3-none-any.whl", hash = "sha256:299403e9ff44581cb9ba2ffeed69c7aa96a008622ad0c46cb575ca75b5b84273", size = 11063, upload-time = "2025-09-26T14:40:36.069Z" },
-]
-
-[[package]]
-name = "pysqlite3"
-version = "0.6.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/fa/84/6e586bef5f6337dee60066eef752c73fa6fcb93c1e7997b550d3105ed4f9/pysqlite3-0.6.0.tar.gz", hash = "sha256:ecf5112b62a4e6c04438957e343fe9672707bd3191f789ecae6c95b226aa6bb6", size = 40838, upload-time = "2026-01-05T18:29:37.843Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/6a/8b/9460af84b3e0a33767615b4148bcb746a6aadf9fe2cc55b399d4e00ca22e/pysqlite3-0.6.0-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:b6f768d6e00d4574f5cc1bff174a4703382afe221b04b009bcb8b41164af08a0", size = 952994, upload-time = "2026-01-05T18:29:25.701Z" },
-    { url = "https://files.pythonhosted.org/packages/ea/3f/5445614ed6b60f058715923d12e7a10a6464cd1cf29ec3a166cc0be46e8e/pysqlite3-0.6.0-cp314-cp314-manylinux_2_28_x86_64.whl", hash = "sha256:268fa5873143cccd79f32624c9a25714e4595715795ae09c8366c75cae8f5aed", size = 4528324, upload-time = "2026-01-05T18:29:26.885Z" },
-    { url = "https://files.pythonhosted.org/packages/46/c8/f490d4890f1d1541efda54fea9249f9ae264c46fd5d0e12e5e2757f6abcb/pysqlite3-0.6.0-cp314-cp314-musllinux_1_2_x86_64.whl", hash = "sha256:65a9af11004d350538b6bd852b0ec22cdd62928be9ab522d85c0840d5bf92a72", size = 4531310, upload-time = "2026-01-05T18:29:28.293Z" },
-    { url = "https://files.pythonhosted.org/packages/e0/c3/ff97773adf35afaadaa969ae9fa20f09d25732b2ceba0b986f7039a89c6b/pysqlite3-0.6.0-cp314-cp314-win32.whl", hash = "sha256:cc9787dc409f800e310c8a457b7c98d1c4d4a76e15821b7fb460c0e63554ddd8", size = 744085, upload-time = "2026-01-05T18:29:29.277Z" },
-    { url = "https://files.pythonhosted.org/packages/bc/76/103fc35bec8934c672b5193eadc66384472fd071c269cd95bc4b16595d17/pysqlite3-0.6.0-cp314-cp314-win_amd64.whl", hash = "sha256:81226436fae52d3bec4ce578104c5bcf4c22d3fcf29d4a590fcbde56b90472ef", size = 903944, upload-time = "2026-01-05T18:29:30.309Z" },
 ]
 
 [[package]]
@@ -2511,6 +2507,18 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/da/92/1446574745d74df0c92e6aa4a7b0b3130706a4142b2d1a5869f2eaa423c6/pyyaml-6.0.3-cp314-cp314t-musllinux_1_2_x86_64.whl", hash = "sha256:16249ee61e95f858e83976573de0f5b2893b3677ba71c9dd36b9cf8be9ac6d65", size = 829923, upload-time = "2025-09-25T21:32:54.537Z" },
     { url = "https://files.pythonhosted.org/packages/f0/7a/1c7270340330e575b92f397352af856a8c06f230aa3e76f86b39d01b416a/pyyaml-6.0.3-cp314-cp314t-win_amd64.whl", hash = "sha256:4ad1906908f2f5ae4e5a8ddfce73c320c2a1429ec52eafd27138b7f1cbe341c9", size = 174062, upload-time = "2025-09-25T21:32:55.767Z" },
     { url = "https://files.pythonhosted.org/packages/f1/12/de94a39c2ef588c7e6455cfbe7343d3b2dc9d6b6b2f40c4c6565744c873d/pyyaml-6.0.3-cp314-cp314t-win_arm64.whl", hash = "sha256:ebc55a14a21cb14062aa4162f906cd962b28e2e9ea38f9b4391244cd8de4ae0b", size = 149341, upload-time = "2025-09-25T21:32:56.828Z" },
+]
+
+[[package]]
+name = "rdflib"
+version = "7.6.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyparsing" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/98/f5/18bb77b7af9526add0c727a3b2048959847dc5fb030913e2918bf384fec3/rdflib-7.6.0.tar.gz", hash = "sha256:6c831288d5e4a5a7ece85d0ccde9877d512a3d0f02d7c06455d00d6d0ea379df", size = 4943826, upload-time = "2026-02-13T07:15:55.938Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/10/c2/6604a71269e0c1bd75656d5a001432d16f2cc5b8c057140ec797155c295e/rdflib-7.6.0-py3-none-any.whl", hash = "sha256:30c0a3ebf4c0e09215f066be7246794b6492e054e782d7ac2a34c9f70a15e0dd", size = 615416, upload-time = "2026-02-13T07:15:46.487Z" },
 ]
 
 [[package]]
@@ -2612,7 +2620,7 @@ dependencies = [
     { name = "opentelemetry-exporter-otlp-proto-http" },
     { name = "opentelemetry-sdk" },
     { name = "pydantic" },
-    { name = "pysqlite3" },
+    { name = "rdflib" },
 ]
 
 [package.dev-dependencies]
@@ -2632,7 +2640,7 @@ requires-dist = [
     { name = "opentelemetry-exporter-otlp-proto-http", specifier = ">=1.45.1" },
     { name = "opentelemetry-sdk", specifier = ">=1.45.1" },
     { name = "pydantic", specifier = ">=2.12.5" },
-    { name = "pysqlite3", specifier = ">=0.6.0" },
+    { name = "rdflib", specifier = ">=7.6.0" },
 ]
 
 [package.metadata.requires-dev]

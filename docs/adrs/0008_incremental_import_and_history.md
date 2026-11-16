@@ -4,7 +4,7 @@ Date: 2026-10-07
 
 ## Status
 
-Accepted
+Accepted; storage superseded by 0013
 
 ## Decision
 
@@ -39,8 +39,7 @@ one assessment version to avoid mixing policies/configurations.
 
 Persist full supporting series in packs. Tool responses include summary
 evidence, violation periods, HTTP histograms, and explicit pack/path references
-for series and bucket/window collections, avoiding repetition in
-model context. Long violation-period collections show the first eight periods
+for series and bucket/window collections. Long violation-period collections show the first eight periods
 and a full pack/path reference; persist all periods in the pack.
 
 ## Consequences
