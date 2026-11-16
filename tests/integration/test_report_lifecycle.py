@@ -10,7 +10,7 @@ from uuid import uuid4
 from langchain_core.tools import ToolException
 
 from src.adapters.outbound.html_report import HTMLReport
-from src.adapters.outbound.sqlite_report_repository import SQLiteReportRepository
+from src.adapters.outbound.sqlite.sqlite_report_repository import SQLiteReportRepository
 from src.application.performance_assessment import build_performance_assessment_service
 from src.application.use_cases.assess_reports import (
     AssessmentService,

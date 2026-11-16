@@ -5,7 +5,7 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph.state import CompiledStateGraph
 
 from src.adapters.outbound.html_report import HTMLReport
-from src.adapters.outbound.sqlite_report_repository import SQLiteReportRepository
+from src.adapters.outbound.sqlite.sqlite_report_repository import SQLiteReportRepository
 from src.adapters.outbound.yaml_target_source import YamlTargetSource
 from src.application.performance_assessment import build_performance_assessment_service
 from src.application.use_cases.assess_reports import EvidenceUnavailableError
