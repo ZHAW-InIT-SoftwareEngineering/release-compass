@@ -1,0 +1,59 @@
+@prefix release-compass: <https://github.com/ZHAW-InIT-SoftwareEngineering/release-compass/ontology#> .
+@prefix ai2core: <https://ai-square.ch/ai2core#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+
+<https://github.com/ZHAW-InIT-SoftwareEngineering/release-compass/ontology>
+    a owl:Ontology ;
+    rdfs:label "Release Compass ontology"@en ;
+    rdfs:comment "Reports, quality gates, metrics and assessments for release decisions."@en ;
+    owl:versionInfo "0.1.0" ;
+    dcterms:source <https://ceur-ws.org/Vol-3959/PT-paper3.pdf> .
+
+
+#################################################################
+#    Classes
+#################################################################
+
+release-compass:Report rdf:type owl:Class ;
+    rdfs:comment "One imported test report (one HTML source) containing quality gate runs."@en .
+
+
+#################################################################
+#    Object Properties
+#################################################################
+
+release-compass:previous_report rdf:type owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain release-compass:Report ;
+    rdfs:range  release-compass:Report ;
+    rdfs:comment "The chronologically preceding report (ADR 0008)."@en .
+
+
+#################################################################
+#    Data properties
+#################################################################
+
+release-compass:generated_at rdf:type owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain release-compass:Report ; 
+    rdfs:range xsd:dateTime .
+
+release-compass:ingestion_sequence rdf:type owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain release-compass:Report ;
+    rdfs:range  xsd:integer .
+
+release-compass:source_fingerprint rdf:type owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain release-compass:Report ;
+    rdfs:range  xsd:string ;
+    rdfs:comment "SHA-256 of the source HTML bytes."@en .
+
+release-compass:source_path rdf:type owl:DatatypeProperty ;   # not functional: aliases (ADR 0008)
+    rdfs:domain release-compass:Report ;
+    rdfs:range  xsd:string ;
+    rdfs:comment "A file path the report was imported from; several paths of identical content are aliases."@en .
+
+release-compass:is_root rdf:type owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain release-compass:Report ;
+    rdfs:range  xsd:boolean .
