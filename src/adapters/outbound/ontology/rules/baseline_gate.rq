@@ -1,0 +1,31 @@
+# For each gate of the report, the latest earlier passing run of the same gate
+# type, even in a report that did not pass (ADR 0006). Within one assessment
+# version all runs of a gate type are evaluated by the same targets.
+# Bindings: ?id (report ID), ?graph (assessment graph).
+INSERT { GRAPH ?graph { ?gate release-compass:baseline_gate ?baseline } }
+WHERE {
+    ?report ai2core:has_id ?id ;
+            release-compass:generated_at ?at ;
+            release-compass:ingestion_sequence ?sequence ;
+            release-compass:contains_gate ?gate .
+    ?gate release-compass:gate_type ?gate_type .
+    ?baseline_report release-compass:contains_gate ?baseline ;
+                     release-compass:generated_at ?baseline_at ;
+                     release-compass:ingestion_sequence ?baseline_sequence .
+    ?baseline release-compass:gate_type ?gate_type ;
+              release-compass:outcome release-compass:pass .
+    FILTER (?baseline_at < ?at
+            || (?baseline_at = ?at && ?baseline_sequence < ?sequence))
+    FILTER NOT EXISTS {
+        ?later_report release-compass:contains_gate ?later ;
+                      release-compass:generated_at ?later_at ;
+                      release-compass:ingestion_sequence ?later_sequence .
+        ?later release-compass:gate_type ?gate_type ;
+               release-compass:outcome release-compass:pass .
+        FILTER ((?later_at > ?baseline_at
+                 || (?later_at = ?baseline_at
+                     && ?later_sequence > ?baseline_sequence))
+                && (?later_at < ?at
+                    || (?later_at = ?at && ?later_sequence < ?sequence)))
+    }
+}

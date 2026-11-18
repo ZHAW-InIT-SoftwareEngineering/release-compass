@@ -1,21 +1,26 @@
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Protocol
 
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph.state import CompiledStateGraph
 
 from src.adapters.outbound.html_report import HTMLReport
-from src.adapters.outbound.sqlite_report_repository import SQLiteReportRepository
+from src.adapters.outbound.ontology.turtle_knowledge_base import TurtleKnowledgeBase
+from src.adapters.outbound.sqlite.sqlite_report_repository import SQLiteReportRepository
 from src.adapters.outbound.yaml_target_source import YamlTargetSource
 from src.application.performance_assessment import build_performance_assessment_service
-from src.application.use_cases.assess_reports import EvidenceUnavailableError
-from src.application.use_cases.compare_gate import ReportNotFoundError
+from src.application.ports.outbound.report_questions import ReportQuestions
+from src.application.ports.outbound.report_repository import ReportRepository
+from src.application.use_cases.answer_report_questions import (
+    ReportNotFoundError,
+    ReportQuestionService,
+)
 from src.application.use_cases.import_reports import ReportInput, import_reports
-from src.configs.application.local import load_local_config
+from src.configs.application.local import SystemConfig, load_local_config
 from src.configs.ingestion.html_mapping import load_html_mapping
 from src.configs.llm.llm_config import load_llm_config
 from src.domain.assessment import Outcome
-from src.domain.gates.performance.serialization import PERFORMANCE_DOMAIN_TYPES
 from src.domain.history import report_order
 from src.harness.graph import build_graph
 from src.harness.system.system_prompt import system_prompt
@@ -36,15 +41,24 @@ class ChatSession:
     trace_metadata: dict[str, str]
 
 
-def build_chat_session() -> ChatSession:
-    """Import reports, prepare assessments, and wire the LLM, tools, and graph."""
-    local_config = load_local_config(LOCAL_CONFIG_PATH)
-    report_repository = SQLiteReportRepository(
-        local_config.system.db_path,
-        domain_types=PERFORMANCE_DOMAIN_TYPES,
-    )
+class Store(ReportRepository, ReportQuestions, Protocol):
+    """Import, assessment and question answering in one store."""
 
-    import_reports(
+
+def open_repository(system: SystemConfig) -> Store:
+    """The configured store; both implement the same port (ADR 0013)."""
+    if system.store == "sqlite":
+        assert system.db_path is not None
+        return SQLiteReportRepository(system.db_path)
+    assert system.kb_dir is not None
+    return TurtleKnowledgeBase(system.kb_dir)
+
+
+def build_chat_session() -> ChatSession:
+    """Import and assess reports, then wire the LLM, tools and graph."""
+    local_config = load_local_config(LOCAL_CONFIG_PATH)
+    repository = open_repository(local_config.system)
+    reports = import_reports(
         [
             ReportInput(
                 item.path,
@@ -60,35 +74,36 @@ def build_chat_session() -> ChatSession:
                 for source, path in local_config.ingestion.mappings.items()
             }
         ),
-        report_repository,
+        repository,
     )
-    reports = report_repository.list_reports()
     if not reports:
         raise ValueError("At least one stored report is required for chat")
     current_report = max(reports, key=report_order)
-    assessments = build_performance_assessment_service(
-        report_repository,
-        YamlTargetSource(PERFORMANCE_CONFIG_PATH).targets(),
+    assessment = build_performance_assessment_service(
+        repository, YamlTargetSource(PERFORMANCE_CONFIG_PATH).targets()
     )
-    assessments.prepare()
+    
+    assessment.prepare()
+    questions = ReportQuestionService(repository, assessment.gates)
 
-    llm_config = load_llm_config(LLM_CONFIG_PATH)
-    llm = init_llm(llm_config)
-    tools = build_tools(assessments)
-    model_with_tools = llm.bind_tools(tools)
+    tools = build_tools(questions)
+    model_with_tools = init_llm(load_llm_config(LLM_CONFIG_PATH)).bind_tools(tools)
 
     def current_outcome() -> Outcome | None:
-        """Return the current report's outcome; None when evidence is missing."""
+        """The current report's outcome; None when it is missing."""
         try:
-            return assessments.get_evidence(current_report.report_id).outcome
-        except ReportNotFoundError, EvidenceUnavailableError:
+            return questions.describe_report(current_report.report_id).outcome
+        except ReportNotFoundError:
             return None
 
     # One checkpointer for the process; conversations are separated by thread_id.
     graph = build_graph(model_with_tools, tools, MemorySaver(), current_outcome)
-
     return ChatSession(
         graph=graph,
         system_prompt=system_prompt(current_report),
-        trace_metadata={"current_report_id": str(current_report.report_id)},
+        trace_metadata={
+            "current_report_id": str(current_report.report_id),
+            "assessment_version": assessment.version,
+            "store": local_config.system.store,
+        },
     )

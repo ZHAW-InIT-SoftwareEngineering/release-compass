@@ -1,22 +1,13 @@
-"""Compose all configured gate-specific and general-purpose harness tools."""
+"""Compose the competency-question tools with the CI/CD tool."""
 
 from langchain.tools import BaseTool
 
-from src.application.use_cases.assess_reports import AssessmentService
-from src.domain.gates.performance.performance_gate import PerformanceGate
+from src.application.use_cases.answer_report_questions import ReportQuestionService
+from src.domain.gates.registry import GATE_KINDS
 from src.harness.tools.cicd_tools import cicd_tool
-from src.harness.tools.gate_tools import (
-    build_compare_gate_tool,
-    build_performance_evidence_tool,
-)
-from src.harness.tools.report_tools import build_report_history_tools
+from src.harness.tools.report_tools import build_report_tools
 
 
-def build_tools(service: AssessmentService) -> list[BaseTool]:
-    """Build the complete tool set for the currently configured gate set."""
-    return [
-        build_compare_gate_tool(service.repository, PerformanceGate),
-        build_performance_evidence_tool(service),
-        *build_report_history_tools(service),
-        cicd_tool,
-    ]
+def build_tools(service: ReportQuestionService) -> list[BaseTool]:
+    comparable = {kind.name: kind.supported for kind in GATE_KINDS.values()}
+    return [*build_report_tools(service, comparable), cicd_tool]

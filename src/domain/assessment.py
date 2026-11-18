@@ -1,10 +1,10 @@
 """Shared assessment result contracts and gate-agnostic operations."""
 
-from collections.abc import Callable
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
-from src.domain.gates.gate import Gate
+from src.domain.targets import MetricTarget
 
 Outcome = Literal["pass", "fail", "unknown"]
 
@@ -40,9 +40,10 @@ class GateAcceptance:
 
 @dataclass(frozen=True)
 class GateDefinition:
-    gate_type: type[Gate]
-    assess: Callable[[Gate], GateAcceptance]
-    compare: Callable[[Gate, Gate | None], dict[str, Any]]
+    """A required gate type and the targets its runs are scored against."""
+
+    gate_type: str
+    targets: Mapping[str, MetricTarget]
     policy_version: str
 
 
@@ -52,46 +53,3 @@ def combine_outcomes(outcomes: list[Outcome]) -> Outcome:
     return (
         "pass" if outcomes and all(value == "pass" for value in outcomes) else "unknown"
     )
-
-
-def compare_acceptance_scores(
-    current: GateAcceptance,
-    baseline: GateAcceptance | None,
-) -> dict[str, Any]:
-    values = {}
-    for name, metric in current.metrics.items():
-        prior = baseline.metrics.get(name) if baseline else None
-        delta = (
-            metric.score - prior.score
-            if metric.score is not None
-            and prior is not None
-            and prior.score is not None
-            else None
-        )
-        reason = (
-            "No prior passing baseline"
-            if baseline is None
-            else "Missing current or baseline score"
-            if delta is None
-            else None
-        )
-        values[name] = {
-            "current": metric.score,
-            "baseline": prior.score if prior else None,
-            "unit": "score_0_to_1",
-            "absolute_delta": delta,
-            "relative_delta_percent": (
-                delta / abs(prior.score) * 100
-                if delta is not None
-                and prior
-                and prior.score is not None
-                and prior.score != 0
-                else None
-            ),
-            "current_source": metric.source,
-            "baseline_source": prior.source if prior else None,
-            "unavailable_reason": reason,
-            "relative_unavailable_reason": reason
-            or ("Zero baseline" if prior and prior.score == 0 else None),
-        }
-    return values

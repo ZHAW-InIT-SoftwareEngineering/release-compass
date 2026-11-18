@@ -1,0 +1,27 @@
+# Report outcome (ADR 0005): fail if any gate fails; pass only if every gate
+# passes and every required gate is present; otherwise unknown. Gate outcomes
+# come from Python scoring; an unassessed gate counts as unknown.
+# Bindings: ?id (report ID), ?graph (assessment graph),
+# ?required_gates (number of required gate types).
+INSERT { GRAPH ?graph { ?report release-compass:outcome ?outcome } }
+WHERE {
+    ?report ai2core:has_id ?id .
+    {
+        SELECT ?report (COUNT(?gate) AS ?gates)
+               (SUM(IF(BOUND(?gate_outcome)
+                       && ?gate_outcome = release-compass:pass, 1, 0)) AS ?passes)
+               (SUM(IF(BOUND(?gate_outcome)
+                       && ?gate_outcome = release-compass:fail, 1, 0)) AS ?fails)
+        WHERE {
+            ?report a release-compass:Report .
+            OPTIONAL {
+                ?report release-compass:contains_gate ?gate .
+                OPTIONAL { ?gate release-compass:outcome ?gate_outcome }
+            }
+        }
+        GROUP BY ?report
+    }
+    BIND (IF(?fails > 0, release-compass:fail,
+             IF(?passes = ?gates && ?passes = ?required_gates,
+                release-compass:pass, release-compass:unknown)) AS ?outcome)
+}
