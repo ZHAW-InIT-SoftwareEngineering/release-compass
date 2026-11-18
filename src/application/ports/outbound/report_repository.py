@@ -1,4 +1,4 @@
-from collections.abc import Mapping
+from collections.abc import Collection, Mapping
 from datetime import datetime
 from typing import NamedTuple, Protocol
 from uuid import UUID
@@ -18,7 +18,7 @@ class ReportRepository(Protocol):
     """Stored reports and their assessment results.
 
     Methods are shaped by the use cases, independent of the storage technology
-    (today an ontology knowledge base, ADR 0013).
+    (an ontology knowledge base, ADR 0013, or SQLite).
     """
 
     # Import (ADR 0008)
@@ -39,6 +39,12 @@ class ReportRepository(Protocol):
 
     def open_assessment(self, version: str) -> None: ...
 
+    def unassessed_reports(self) -> list[UUID]:
+        """Reports without an outcome in the open version, oldest first (ADR 0006)."""
+        ...
+
+    def gate_types(self, report_id: UUID) -> set[str]: ...
+
     def measurements(
         self, report_id: UUID, gate_type: str, metric: str, statistic: str
     ) -> list[Measurement]:
@@ -53,5 +59,16 @@ class ReportRepository(Protocol):
         targets: Mapping[str, MetricTarget],
         policy_version: str,
     ) -> None: ...
+
+    def apply_rules(
+        self, report_id: UUID, required_gate_types: Collection[str]
+    ) -> None:
+        """Derive the report's history links, outcome and baselines.
+
+        Runs after its gates are assessed and after every earlier report:
+        previous report or root (ADR 0008), report outcome from the gate
+        outcomes (ADR 0005), latest earlier passing report and gates (ADR 0006).
+        """
+        ...
 
     def save(self) -> None: ...

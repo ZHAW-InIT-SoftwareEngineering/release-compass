@@ -1,0 +1,15 @@
+# Q1/Q2: a report's facts and, in the open assessment version, its outcome and
+# predecessor. One row per source path and gate type.
+# Binding: ?id (report ID).
+SELECT ?generated_at ?sequence ?path ?gate_type ?outcome ?is_root ?previous
+WHERE {
+    ?report a release-compass:Report ;
+            ai2core:has_id ?id ;
+            release-compass:generated_at ?generated_at ;
+            release-compass:ingestion_sequence ?sequence .
+    OPTIONAL { ?report release-compass:source_path ?path }
+    OPTIONAL { ?report release-compass:contains_gate/release-compass:gate_type ?gate_type }
+    OPTIONAL { ?report release-compass:outcome ?outcome }
+    OPTIONAL { ?report release-compass:is_root ?is_root }
+    OPTIONAL { ?report release-compass:previous_report/ai2core:has_id ?previous }
+}

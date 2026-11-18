@@ -1,0 +1,22 @@
+# Q3: the report baseline and, per gate, the baseline gate's report and the
+# scoring policy version (ADR 0006). One row per gate; none for an unknown report.
+# Binding: ?id (report ID).
+SELECT ?baseline ?gate_type ?gate_baseline ?policy_version
+WHERE {
+    ?report a release-compass:Report ;
+            ai2core:has_id ?id .
+    OPTIONAL { ?report release-compass:baseline_report/ai2core:has_id ?baseline }
+    OPTIONAL {
+        ?report release-compass:contains_gate ?gate .
+        ?gate release-compass:gate_type ?gate_type .
+        OPTIONAL {
+            ?gate release-compass:baseline_gate ?baseline_gate .
+            ?baseline_report release-compass:contains_gate ?baseline_gate ;
+                             ai2core:has_id ?gate_baseline .
+        }
+        OPTIONAL {
+            ?gate release-compass:has_assessment/release-compass:policy_version
+                  ?policy_version
+        }
+    }
+}

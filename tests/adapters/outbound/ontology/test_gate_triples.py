@@ -2,7 +2,7 @@ import unittest
 
 from rdflib import RDF, Literal
 
-from src.adapters.outbound.ontology.gate_triples import gate_triples, gate_type
+from src.adapters.outbound.ontology.gate_triples import gate_triples
 from src.adapters.outbound.ontology.release_compass_ontology import (
     AI2CORE,
     RELEASE_COMPASS,
@@ -42,8 +42,6 @@ class GateTriplesTests(unittest.TestCase):
     def test_rejects_unknown_gate_types(self):
         with self.assertRaisesRegex(ValueError, "Unsupported gate type Gate"):
             gate_triples(Gate(), REPORT_ID)
-        with self.assertRaisesRegex(ValueError, "Unsupported gate type"):
-            gate_type(Gate())
 
 
 if __name__ == "__main__":

@@ -1,0 +1,30 @@
+# The chronologically preceding report, including failed and unknown ones;
+# a report without one is the root (ADR 0006, ADR 0008).
+# Order: generated-at, then ingestion sequence.
+# Bindings: ?id (report ID), ?graph (assessment graph).
+INSERT { GRAPH ?graph { ?report release-compass:previous_report ?previous } }
+WHERE {
+    ?report ai2core:has_id ?id ;
+            release-compass:generated_at ?at ;
+            release-compass:ingestion_sequence ?sequence .
+    ?previous a release-compass:Report ;
+              release-compass:generated_at ?previous_at ;
+              release-compass:ingestion_sequence ?previous_sequence .
+    FILTER (?previous_at < ?at
+            || (?previous_at = ?at && ?previous_sequence < ?sequence))
+    FILTER NOT EXISTS {
+        ?between a release-compass:Report ;
+                 release-compass:generated_at ?between_at ;
+                 release-compass:ingestion_sequence ?between_sequence .
+        FILTER ((?between_at > ?previous_at
+                 || (?between_at = ?previous_at
+                     && ?between_sequence > ?previous_sequence))
+                && (?between_at < ?at
+                    || (?between_at = ?at && ?between_sequence < ?sequence)))
+    }
+} ;
+INSERT { GRAPH ?graph { ?report release-compass:is_root ?is_root } }
+WHERE {
+    ?report ai2core:has_id ?id .
+    BIND (NOT EXISTS { ?report release-compass:previous_report ?any } AS ?is_root)
+}

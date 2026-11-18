@@ -1,5 +1,8 @@
 system:
+  # store: knowledge_base  # or sqlite
+  store: knowledge_base
   kb_dir: data/kb
+  db_path: data/database/release_compass.sqlite3
 
 ingestion:
   mappings:

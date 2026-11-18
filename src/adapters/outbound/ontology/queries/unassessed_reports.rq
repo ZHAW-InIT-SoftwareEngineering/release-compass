@@ -1,0 +1,11 @@
+# Reports without an outcome in the open assessment version, oldest first
+# (generated-at, then ingestion sequence; ADR 0006).
+SELECT ?id
+WHERE {
+    ?report a release-compass:Report ;
+            ai2core:has_id ?id ;
+            release-compass:generated_at ?generated_at ;
+            release-compass:ingestion_sequence ?sequence .
+    FILTER NOT EXISTS { ?report release-compass:outcome ?outcome }
+}
+ORDER BY ?generated_at ?sequence

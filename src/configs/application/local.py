@@ -1,12 +1,24 @@
 from pathlib import Path
+from typing import Literal
 
 import yaml
 from pydantic import BaseModel, model_validator
 
 
 class SystemConfig(BaseModel):
-    # Folder of the knowledge base Turtle files, e.g. facts.ttl (ADR 0013).
-    kb_dir: Path
+    # Adapter of ReportRepository used by the composition root (ADR 0013).
+    store: Literal["knowledge_base", "sqlite"] = "knowledge_base"
+    # Folder of the knowledge base Turtle files, e.g. facts.ttl.
+    kb_dir: Path | None = None
+    db_path: Path | None = None
+
+    @model_validator(mode="after")
+    def _check_store_path(self):
+        path = self.kb_dir if self.store == "knowledge_base" else self.db_path
+        if path is None:
+            name = "kb_dir" if self.store == "knowledge_base" else "db_path"
+            raise ValueError(f"Store {self.store!r} requires system.{name}")
+        return self
 
 
 class IngestionConfig(BaseModel):

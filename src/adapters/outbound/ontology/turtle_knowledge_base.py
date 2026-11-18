@@ -1,6 +1,6 @@
 """Knowledge base held in RDFLib graphs and persisted as Turtle (ADR 0013)."""
 
-from collections.abc import Mapping
+from collections.abc import Collection, Mapping
 from datetime import datetime
 from functools import cache
 from pathlib import Path
@@ -18,8 +18,17 @@ from src.adapters.outbound.ontology.release_compass_ontology import (
     report_iri,
 )
 from src.adapters.outbound.ontology.report_triples import report_triples
+from src.application.ports.outbound.report_questions import (
+    Baselines,
+    GateBaseline,
+    GateResult,
+    MeasurementChange,
+    MetricResult,
+    ReportSummary,
+    SourceResult,
+)
 from src.application.ports.outbound.report_repository import ImportState
-from src.domain.assessment import GateAcceptance
+from src.domain.assessment import GateAcceptance, Outcome
 from src.domain.report import Report
 from src.domain.scoring import Measurement
 from src.domain.targets import MetricTarget
@@ -27,7 +36,12 @@ from src.domain.targets import MetricTarget
 FACTS_FILE = "facts.ttl"
 _NAMESPACES = {"release-compass": RELEASE_COMPASS, "ai2core": AI2CORE, "xsd": XSD}
 _QUERIES = Path(__file__).resolve().parent / "queries"
+_RULES = Path(__file__).resolve().parent / "rules"
+# Applied in this order: the report outcome needs the gate outcomes, the
+# baselines need the outcomes of earlier reports.
+RULES = ("previous_report", "report_outcome", "baseline_report", "baseline_gate")
 _FACTS_GRAPH = RELEASE_COMPASS_DATA["graph/facts"]
+_OUTCOMES: dict[str, Outcome] = {"pass": "pass", "fail": "fail", "unknown": "unknown"}
 
 
 def assessment_file(version: str) -> str:
@@ -37,6 +51,11 @@ def assessment_file(version: str) -> str:
 @cache
 def _query(name: str) -> str:
     return (_QUERIES / f"{name}.rq").read_text(encoding="utf-8")
+
+
+@cache
+def _rule(name: str) -> str:
+    return (_RULES / f"{name}.rq").read_text(encoding="utf-8")
 
 
 class TurtleKnowledgeBase:
@@ -116,6 +135,16 @@ class TurtleKnowledgeBase:
         )
         _load(self._assessment, self._directory / assessment_file(version))
 
+    def unassessed_reports(self) -> list[UUID]:
+        self._require_assessment()
+        return [
+            UUID(str(row["id"])) for row in self.select(_query("unassessed_reports"))
+        ]
+
+    def gate_types(self, report_id: UUID) -> set[str]:
+        rows = self.select(_query("gate_types"), {"id": str(report_id)})
+        return {str(row["gate_type"]) for row in rows}
+
     def measurements(
         self, report_id: UUID, gate_type: str, metric: str, statistic: str
     ) -> list[Measurement]:
@@ -147,11 +176,136 @@ class TurtleKnowledgeBase:
         targets: Mapping[str, MetricTarget],
         policy_version: str,
     ) -> None:
+        assessment, version = self._require_assessment()
+        assessment += assessment_triples(
+            report_id, gate_type, acceptance, targets, version, policy_version
+        )
+
+    def apply_rules(
+        self, report_id: UUID, required_gate_types: Collection[str]
+    ) -> None:
+        assessment, _ = self._require_assessment()
+        bindings = {
+            "id": Literal(str(report_id)),
+            "graph": assessment.identifier,
+            "required_gates": Literal(len(set(required_gate_types))),
+        }
+        for name in RULES:
+            self._dataset.update(_rule(name), initNs=_NAMESPACES, initBindings=bindings)
+
+    # Questions (one fixed query each), answered from the open version
+
+    def describe_report(self, report_id: UUID) -> ReportSummary | None:
+        rows = self.select(_query("describe_report"), {"id": str(report_id)})
+        if not rows:
+            return None
+        first = rows[0]
+        timestamp, sequence = first["generated_at"], first["sequence"]
+        if not isinstance(timestamp, datetime) or not isinstance(sequence, int):
+            raise TypeError(f"Stored report {report_id} lacks its order fields")
+        is_root = first.get("is_root")
+        previous = first.get("previous")
+        return ReportSummary(
+            report_id=report_id,
+            generated_at=timestamp,
+            ingestion_sequence=sequence,
+            source_paths=_distinct(rows, "path"),
+            gate_types=_distinct(rows, "gate_type"),
+            outcome=_outcome(first.get("outcome")),
+            is_root=is_root if isinstance(is_root, bool) else None,
+            previous_report_id=None if previous is None else UUID(str(previous)),
+        )
+
+    def baselines(self, report_id: UUID) -> Baselines | None:
+        rows = self.select(_query("baselines"), {"id": str(report_id)})
+        if not rows:
+            return None
+        gates = {
+            str(row["gate_type"]): GateBaseline(
+                str(row["gate_type"]),
+                _uuid(row.get("gate_baseline")),
+                _text(row.get("policy_version")),
+            )
+            for row in rows
+            if "gate_type" in row
+        }
+        return Baselines(
+            report_id,
+            _uuid(rows[0].get("baseline")),
+            [gates[name] for name in sorted(gates)],
+        )
+
+    def compare_measurements(
+        self,
+        report_id: UUID,
+        baseline_report_id: UUID,
+        gate_type: str,
+        metric: str,
+        statistic: str,
+    ) -> list[MeasurementChange]:
+        rows = self.select(
+            _query("compare_measurements"),
+            {
+                "id": str(report_id),
+                "baseline_id": str(baseline_report_id),
+                "gate_type": gate_type,
+                "metric": metric,
+                "statistic": statistic,
+            },
+        )
+        return [
+            MeasurementChange(
+                source=str(row["source"]),
+                unit=_text(row.get("unit")),
+                baseline_unit=_text(row.get("baseline_unit")),
+                current=_float(row.get("current")),
+                baseline=_float(row.get("baseline")),
+                delta=_float(row.get("delta")),
+            )
+            for row in rows
+        ]
+
+    def gate_results(self, report_id: UUID) -> list[GateResult]:
+        rows = self.select(_query("gate_results"), {"id": str(report_id)})
+        gates: dict[str, Outcome | None] = {}
+        metrics: dict[tuple[str, str], dict[str, object]] = {}
+        sources: dict[tuple[str, str], dict[str, SourceResult]] = {}
+        for row in rows:
+            gate_type = str(row["gate_type"])
+            gates[gate_type] = _outcome(row.get("gate_outcome"))
+            if "metric" not in row:
+                continue
+            key = (gate_type, str(row["metric"]))
+            metrics[key] = row
+            if "source" in row:
+                excluded = row.get("excluded_reason")
+                meets_target = row.get("meets_target")
+                sources.setdefault(key, {})[str(row["source"])] = SourceResult(
+                    source=str(row["source"]),
+                    value=_float(row.get("value")),
+                    meets_target=meets_target
+                    if isinstance(meets_target, bool)
+                    else None,
+                    excluded=excluded is not None,
+                    reason=_text(excluded or row.get("source_reason")),
+                )
+        return [
+            GateResult(
+                gate_type,
+                outcome,
+                [
+                    _metric_result(row, sources.get(key, {}))
+                    for key, row in sorted(metrics.items())
+                    if key[0] == gate_type
+                ],
+            )
+            for gate_type, outcome in sorted(gates.items())
+        ]
+
+    def _require_assessment(self) -> tuple[Graph, str]:
         if self._assessment is None or self._version is None:
             raise RuntimeError("Open an assessment version before adding results")
-        self._assessment += assessment_triples(
-            report_id, gate_type, acceptance, targets, self._version, policy_version
-        )
+        return self._assessment, self._version
 
     # Shared
 
@@ -196,6 +350,49 @@ def _save(graph: Graph, path: Path) -> None:
 
 def _float(value: object) -> float | None:
     return None if value is None else float(str(value))
+
+
+def _text(value: object) -> str | None:
+    return None if value is None else str(value)
+
+
+def _uuid(value: object) -> UUID | None:
+    return None if value is None else UUID(str(value))
+
+
+def _distinct(rows: list[dict[str, object]], name: str) -> list[str]:
+    return sorted({str(row[name]) for row in rows if name in row})
+
+
+def _outcome(value: object) -> Outcome | None:
+    """``release-compass:pass`` → ``"pass"``."""
+    if value is None:
+        return None
+    try:
+        return _OUTCOMES[str(value).rsplit("#", 1)[-1]]
+    except KeyError:
+        raise ValueError(f"Unknown outcome {value}") from None
+
+
+def _metric_result(
+    row: dict[str, object], sources: dict[str, SourceResult]
+) -> MetricResult:
+    outcome = _outcome(row["outcome"])
+    min_score = _float(row["min_score"])
+    assert outcome is not None and min_score is not None
+    return MetricResult(
+        metric=str(row["metric"]),
+        statistic=str(row["statistic"]),
+        unit=str(row["unit"]),
+        min=_float(row.get("min")),
+        max=_float(row.get("max")),
+        min_score=min_score,
+        score=_float(row.get("score")),
+        outcome=outcome,
+        reason=_text(row.get("reason")),
+        policy_version=str(row["policy_version"]),
+        sources=[sources[name] for name in sorted(sources)],
+    )
 
 
 def _to_python(value: object) -> object:

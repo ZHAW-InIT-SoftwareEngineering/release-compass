@@ -100,6 +100,18 @@ is running.
 
 ## Data and configuration
 
+Adding a report:
+
+1. Export the load-test report as HTML (currently Locust's HTML report).
+2. Place the file under `data/raw/reports/` (e.g. `data/raw/reports/<project>/<name>.html`).
+3. Add an entry with its `path` and `source` to `data.reports` in
+   `configs/application/local.yaml`, in chronological order.
+4. Run the agent; startup imports reports not yet stored. In Docker, rebuild
+   the image first, since `configs/` is baked in.
+
+A report from another tool needs its own mapping file under
+`configs/ingestion/` registered in `ingestion.mappings`.
+
 `configs/application/local.yaml` tells the import which reports to load and
 where to store them. Paths are relative to the repository root (`/app` in
 Docker), so reports must live under `data/` to be visible in the container.
