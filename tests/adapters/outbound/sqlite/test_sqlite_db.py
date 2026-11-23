@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import UUID
 
-from src.adapters.outbound.sqlite.sqlite_report_repository import SQLiteReportRepository
+from src.adapters.outbound.sqlite.sqlite_db import SQLiteDB
 from src.domain.gates.performance.measurements import SUPPORTED, performance_measure
 from tests.adapters.outbound.ontology.examples import (
     POLICY,
@@ -19,15 +19,15 @@ from tests.adapters.outbound.ontology.examples import (
 )
 
 
-class SQLiteReportRepositoryTests(unittest.TestCase):
+class SQLiteDBTests(unittest.TestCase):
     def setUp(self):
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
         self.path = Path(directory.name) / "db" / "reports.sqlite3"
         self.repository = self.reopen()
 
-    def reopen(self) -> SQLiteReportRepository:
-        repository = SQLiteReportRepository(self.path)
+    def reopen(self) -> SQLiteDB:
+        repository = SQLiteDB(self.path)
         self.addCleanup(repository.close)
         return repository
 
@@ -139,7 +139,7 @@ class SQLiteReportRepositoryTests(unittest.TestCase):
             connection.execute("CREATE TABLE reports (report_id TEXT)")
         connection.close()
         with self.assertRaisesRegex(ValueError, "older schema"):
-            SQLiteReportRepository(legacy)
+            SQLiteDB(legacy)
 
 
 if __name__ == "__main__":

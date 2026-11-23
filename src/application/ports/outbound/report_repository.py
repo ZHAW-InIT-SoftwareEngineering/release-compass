@@ -21,8 +21,6 @@ class ReportRepository(Protocol):
     (an ontology knowledge base, ADR 0013, or SQLite).
     """
 
-    # Import (ADR 0008)
-
     def import_state(self) -> ImportState: ...
 
     def get_by_fingerprint(self, fingerprint: str) -> Report | None:
@@ -34,8 +32,6 @@ class ReportRepository(Protocol):
     ) -> None:
         """Store new reports and add alias paths to stored ones, all or nothing."""
         ...
-
-    # Assessment (ADR 0012), one version at a time
 
     def open_assessment(self, version: str) -> None: ...
 

@@ -31,6 +31,9 @@ SPARQL ([Mosquera et al., 2025](https://ceur-ws.org/Vol-3959/PT-paper3.pdf)).
   from Python scoring (ADR 0012).
 - The LLM reads the graph only through fixed, tested SPARQL tools, one per
   competency question. It never writes SPARQL.
+- Competency questions go through the `ReportQuestions` port, which both
+  stores implement. Stores return facts and rule results; measurement deltas
+  are computed in Python (ADR 0015).
 - Reused `ai2core:` properties whose domain or range would infer unwanted
   classes are replaced by `release-compass:` properties.
 
@@ -49,6 +52,6 @@ SPARQL ([Mosquera et al., 2025](https://ceur-ws.org/Vol-3959/PT-paper3.pdf)).
 
 Supersedes the canonical dataclass model of ADR 0002 and the evidence packs of
 ADR 0008. ADR 0005 and 0006 keep their rules; the knowledge base implements
-them in SPARQL.
+them in SPARQL. The comparison of ADR 0003 is replaced by ADR 0015.
 Adds the `rdflib` dependency. Time series and violation periods are no longer
 exposed to the LLM.

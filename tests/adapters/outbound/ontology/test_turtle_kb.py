@@ -5,9 +5,9 @@ from pathlib import Path
 from uuid import UUID
 
 from src.adapters.outbound.ontology.release_compass_ontology import report_iri
-from src.adapters.outbound.ontology.turtle_knowledge_base import (
+from src.adapters.outbound.ontology.turtle_kb import (
     FACTS_FILE,
-    TurtleKnowledgeBase,
+    TurtleKB,
     assessment_file,
 )
 from src.domain.gates.performance.measurements import SUPPORTED, performance_measure
@@ -31,15 +31,15 @@ ORDER BY ?name
 """
 
 
-class TurtleKnowledgeBaseTests(unittest.TestCase):
+class TurtleKBTests(unittest.TestCase):
     def setUp(self):
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
         self.directory = Path(directory.name) / "kb"
-        self.kb = TurtleKnowledgeBase(self.directory)
+        self.kb = TurtleKB(self.directory)
 
-    def reopen(self) -> TurtleKnowledgeBase:
-        return TurtleKnowledgeBase(self.directory)
+    def reopen(self) -> TurtleKB:
+        return TurtleKB(self.directory)
 
     def store_example(self) -> None:
         self.kb.save_import_batch([report()], {})

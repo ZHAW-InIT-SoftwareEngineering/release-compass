@@ -6,8 +6,8 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph.state import CompiledStateGraph
 
 from src.adapters.outbound.html_report import HTMLReport
-from src.adapters.outbound.ontology.turtle_knowledge_base import TurtleKnowledgeBase
-from src.adapters.outbound.sqlite.sqlite_report_repository import SQLiteReportRepository
+from src.adapters.outbound.ontology.turtle_kb import TurtleKB
+from src.adapters.outbound.sqlite.sqlite_db import SQLiteDB
 from src.adapters.outbound.yaml_target_source import YamlTargetSource
 from src.application.performance_assessment import build_performance_assessment_service
 from src.application.ports.outbound.report_questions import ReportQuestions
@@ -24,7 +24,7 @@ from src.domain.assessment import Outcome
 from src.domain.history import report_order
 from src.harness.graph import build_graph
 from src.harness.system.system_prompt import system_prompt
-from src.harness.tools.build_tools import build_tools
+from src.harness.tools.report_tools import build_tools
 from src.llm.llm import init_llm
 
 LLM_CONFIG_PATH = Path("configs/llm/openrouter.yaml")
@@ -46,12 +46,24 @@ class Store(ReportRepository, ReportQuestions, Protocol):
 
 
 def open_repository(system: SystemConfig) -> Store:
-    """The configured store; both implement the same port (ADR 0013)."""
-    if system.store == "sqlite":
-        assert system.db_path is not None
-        return SQLiteReportRepository(system.db_path)
+    """The configured store; every store implements the same port (ADR 0013)."""
+    match system.store:
+        case "knowledge_base":
+            return _open_knowledge_base(system)
+        case "sqlite":
+            return _open_sqlite(system)
+        case unknown:
+            raise ValueError(f"Unsupported store: {unknown!r}")
+
+
+def _open_knowledge_base(system: SystemConfig) -> TurtleKB:
     assert system.kb_dir is not None
-    return TurtleKnowledgeBase(system.kb_dir)
+    return TurtleKB(system.kb_dir)
+
+
+def _open_sqlite(system: SystemConfig) -> SQLiteDB:
+    assert system.db_path is not None
+    return SQLiteDB(system.db_path)
 
 
 def build_chat_session() -> ChatSession:
@@ -82,7 +94,7 @@ def build_chat_session() -> ChatSession:
     assessment = build_performance_assessment_service(
         repository, YamlTargetSource(PERFORMANCE_CONFIG_PATH).targets()
     )
-    
+
     assessment.prepare()
     questions = ReportQuestionService(repository, assessment.gates)
 

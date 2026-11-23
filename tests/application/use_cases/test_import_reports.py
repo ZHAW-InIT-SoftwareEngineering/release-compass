@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock
 
-from src.adapters.outbound.ontology.turtle_knowledge_base import TurtleKnowledgeBase
+from src.adapters.outbound.ontology.turtle_kb import TurtleKB
 from src.application.use_cases.import_reports import ReportInput, import_reports
 from src.domain.report import Report
 
@@ -104,12 +104,12 @@ class ImportReportsTests(unittest.TestCase):
             self.run_import([ReportInput(self.path, "2026-09-02", source="test")])
         self.assertEqual(self.stored(), {})
 
-    def open_store(self) -> TurtleKnowledgeBase:
-        return TurtleKnowledgeBase(self.directory / "kb")
+    def open_store(self) -> TurtleKB:
+        return TurtleKB(self.directory / "kb")
 
     def stored(self) -> dict[str, set[str]]:
         paths: dict[str, set[str]] = {}
-        for row in TurtleKnowledgeBase(self.directory / "kb").select(STORED_REPORTS):
+        for row in TurtleKB(self.directory / "kb").select(STORED_REPORTS):
             report_paths = paths.setdefault(str(row["id"]), set())
             if "path" in row:
                 report_paths.add(str(row["path"]))

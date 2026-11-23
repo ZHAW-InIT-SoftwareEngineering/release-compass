@@ -1,7 +1,8 @@
 """Answer the competency questions from the store (ADR 0013).
 
-Nothing is calculated here: values, outcomes and baselines come from the
-store; this service only checks reports exist and adds the required gates.
+Values, outcomes and baselines come from the store; this service checks
+reports exist, adds the required gates and compares measurements in the
+domain (ADR 0015).
 """
 
 from collections.abc import Collection
@@ -11,10 +12,10 @@ from uuid import UUID
 from src.application.ports.outbound.report_questions import (
     Baselines,
     GateResult,
-    MeasurementChange,
     ReportQuestions,
     ReportSummary,
 )
+from src.domain.comparison import MeasurementChange, compare_measurements
 
 
 class ReportNotFoundError(LookupError):
@@ -65,8 +66,11 @@ class ReportQuestionService:
     ) -> list[MeasurementChange]:
         self.describe_report(report_id, "Current report")
         self.describe_report(baseline_report_id, "Baseline report")
-        return self.questions.compare_measurements(
-            report_id, baseline_report_id, gate_type, metric, statistic
+        return compare_measurements(
+            self.questions.measurements(report_id, gate_type, metric, statistic),
+            self.questions.measurements(
+                baseline_report_id, gate_type, metric, statistic
+            ),
         )
 
     def explain_outcome(self, report_id: UUID) -> OutcomeExplanation:

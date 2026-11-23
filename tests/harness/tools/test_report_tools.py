@@ -10,13 +10,13 @@ from langgraph.checkpoint.memory import MemorySaver
 from src.application.ports.outbound.report_questions import (
     Baselines,
     GateResult,
-    MeasurementChange,
     MetricResult,
     ReportSummary,
     SourceResult,
 )
 from src.application.use_cases.answer_report_questions import ReportQuestionService
 from src.domain.gates.performance.measurements import SUPPORTED
+from src.domain.scoring import Measurement
 from src.harness.graph import build_graph
 from src.harness.tools.report_tools import LIST_LIMIT, build_report_tools
 
@@ -113,10 +113,17 @@ class ReportToolTests(unittest.TestCase):
 
     def test_compare_returns_largest_deltas_first(self):
         self.store.describe_report.side_effect = lambda report_id: summary(report_id)
-        self.store.compare_measurements.return_value = [
-            MeasurementChange(f"t{index}", "ms", "ms", index, 0, index)
-            for index in range(LIST_LIMIT + 2)
-        ] + [MeasurementChange("no-value", "ms", "ms", None, 1, None)]
+        sources = [f"t{index}" for index in range(LIST_LIMIT + 2)]
+        current = [
+            Measurement(source, source, index, "ms", 1)
+            for index, source in enumerate(sources)
+        ] + [Measurement("no-value", "no-value", None, "ms", 1)]
+        baseline = [Measurement(source, source, 0, "ms", 1) for source in sources] + [
+            Measurement("no-value", "no-value", 1, "ms", 1)
+        ]
+        self.store.measurements.side_effect = lambda report_id, *_: (
+            current if report_id == self.current_id else baseline
+        )
         message = self.invoke_graph("compare_gate", self.compare_arguments())
         self.assertEqual(message.status, "success")
         payload = json.loads(message.content)

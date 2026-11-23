@@ -4,9 +4,9 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from src.adapters.outbound.ontology.turtle_knowledge_base import (
+from src.adapters.outbound.ontology.turtle_kb import (
     FACTS_FILE,
-    TurtleKnowledgeBase,
+    TurtleKB,
 )
 from src.chat_session import build_chat_session
 from src.configs.application.local import LocalConfig
@@ -66,7 +66,7 @@ class BuildChatSessionTests(unittest.TestCase):
         )
         self.assertTrue((self.kb_dir / FACTS_FILE).exists())
         self.assertEqual(len(list(self.kb_dir.glob("assessment-*.ttl"))), 1)
-        rows = TurtleKnowledgeBase(self.kb_dir).select(
+        rows = TurtleKB(self.kb_dir).select(
             "SELECT ?report WHERE { ?report a release-compass:Report }"
         )
         self.assertEqual(len(rows), 1)

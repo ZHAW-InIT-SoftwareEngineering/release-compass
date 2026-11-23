@@ -22,7 +22,6 @@ from src.application.ports.outbound.report_questions import (
     Baselines,
     GateBaseline,
     GateResult,
-    MeasurementChange,
     MetricResult,
     ReportSummary,
     SourceResult,
@@ -58,7 +57,7 @@ def _rule(name: str) -> str:
     return (_RULES / f"{name}.rq").read_text(encoding="utf-8")
 
 
-class TurtleKnowledgeBase:
+class TurtleKB:
     """Two named graphs: immutable report facts and one assessment version.
 
     Queries see both; writes go to exactly one, so assessing never changes
@@ -234,36 +233,6 @@ class TurtleKnowledgeBase:
             _uuid(rows[0].get("baseline")),
             [gates[name] for name in sorted(gates)],
         )
-
-    def compare_measurements(
-        self,
-        report_id: UUID,
-        baseline_report_id: UUID,
-        gate_type: str,
-        metric: str,
-        statistic: str,
-    ) -> list[MeasurementChange]:
-        rows = self.select(
-            _query("compare_measurements"),
-            {
-                "id": str(report_id),
-                "baseline_id": str(baseline_report_id),
-                "gate_type": gate_type,
-                "metric": metric,
-                "statistic": statistic,
-            },
-        )
-        return [
-            MeasurementChange(
-                source=str(row["source"]),
-                unit=_text(row.get("unit")),
-                baseline_unit=_text(row.get("baseline_unit")),
-                current=_float(row.get("current")),
-                baseline=_float(row.get("baseline")),
-                delta=_float(row.get("delta")),
-            )
-            for row in rows
-        ]
 
     def gate_results(self, report_id: UUID) -> list[GateResult]:
         rows = self.select(_query("gate_results"), {"id": str(report_id)})

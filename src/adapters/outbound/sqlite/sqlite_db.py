@@ -18,7 +18,6 @@ from src.application.ports.outbound.report_questions import (
     Baselines,
     GateBaseline,
     GateResult,
-    MeasurementChange,
     MetricResult,
     ReportSummary,
     SourceResult,
@@ -55,19 +54,19 @@ def _rule(name: str) -> str:
 
 
 def _locked[**P, R](
-    method: Callable[Concatenate[SQLiteReportRepository, P], R],
-) -> Callable[Concatenate[SQLiteReportRepository, P], R]:
+    method: Callable[Concatenate[SQLiteDB, P], R],
+) -> Callable[Concatenate[SQLiteDB, P], R]:
     """Run the method while holding the repository lock (ADR 0015)."""
 
     @wraps(method)
-    def wrapper(self: SQLiteReportRepository, *args: P.args, **kwargs: P.kwargs) -> R:
+    def wrapper(self: SQLiteDB, *args: P.args, **kwargs: P.kwargs) -> R:
         with self._lock:
             return method(self, *args, **kwargs)
 
     return wrapper
 
 
-class SQLiteReportRepository:
+class SQLiteDB:
     """Imports commit at once; assessment results commit on `save()`.
 
     One connection, shared across threads behind a lock (ADR 0015).
@@ -76,7 +75,7 @@ class SQLiteReportRepository:
     def __init__(self, database_path: str | Path):
         if str(database_path) != ":memory:":
             Path(database_path).parent.mkdir(parents=True, exist_ok=True)
-        # LangGraph's ToolNode calls tools from worker threads.
+        # LangGraph's ToolNode calls tools from worker threads. => check_same_thread=False
         self._connection = sqlite3.connect(database_path, check_same_thread=False)
         self._lock = threading.RLock()
         self._connection.execute("PRAGMA foreign_keys = ON")
@@ -349,27 +348,6 @@ class SQLiteReportRepository:
                 for gate_type, gate, policy in rows
             ],
         )
-
-    @_locked
-    def compare_measurements(
-        self,
-        report_id: UUID,
-        baseline_report_id: UUID,
-        gate_type: str,
-        metric: str,
-        statistic: str,
-    ) -> list[MeasurementChange]:
-        rows = self._connection.execute(
-            _query("compare_measurements"),
-            {
-                "report_id": str(report_id),
-                "baseline_report_id": str(baseline_report_id),
-                "gate_type": gate_type,
-                "metric": metric,
-                "statistic": statistic,
-            },
-        ).fetchall()
-        return [MeasurementChange(*row) for row in rows]
 
     @_locked
     def gate_results(self, report_id: UUID) -> list[GateResult]:

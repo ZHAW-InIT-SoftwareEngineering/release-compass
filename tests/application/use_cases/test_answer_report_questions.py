@@ -6,8 +6,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import UUID
 
-from src.adapters.outbound.ontology.turtle_knowledge_base import TurtleKnowledgeBase
-from src.adapters.outbound.sqlite.sqlite_report_repository import SQLiteReportRepository
+from src.adapters.outbound.ontology.turtle_kb import TurtleKB
+from src.adapters.outbound.sqlite.sqlite_db import SQLiteDB
 from src.application.performance_assessment import build_performance_assessment_service
 from src.application.use_cases.answer_report_questions import (
     ReportNotFoundError,
@@ -157,12 +157,12 @@ class QuestionContract(unittest.TestCase):
 
 class KnowledgeBaseQuestionTests(QuestionContract):
     def open_store(self):
-        return TurtleKnowledgeBase(self.directory / "kb")
+        return TurtleKB(self.directory / "kb")
 
 
 class SQLiteQuestionTests(QuestionContract):
     def open_store(self):
-        store = SQLiteReportRepository(self.directory / "reports.sqlite3")
+        store = SQLiteDB(self.directory / "reports.sqlite3")
         self.addCleanup(store.close)
         return store
 

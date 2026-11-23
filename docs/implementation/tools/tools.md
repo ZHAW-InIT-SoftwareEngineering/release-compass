@@ -14,7 +14,7 @@ ADR 0013). Tools return stored values only; they never calculate.
 | `describe_report(report_id)` | Q1 | generated-at, ingestion sequence, source paths, gate types, outcome, `is_root`, previous report ID |
 | `get_previous_report(report_id)` | Q2 | `{report_id, history_end, previous_report}`; failed and unknown reports included |
 | `get_baseline(report_id)` | Q3 | report baseline, each gate's baseline and policy version, selection policy (ADR 0006) |
-| `compare_gate(report_id, baseline_report_id, gate_type, metric, statistic)` | Q5 | matched and compared source counts, largest absolute deltas (computed in the store; only with equal units) |
+| `compare_gate(report_id, baseline_report_id, gate_type, metric, statistic)` | Q5 | matched and compared source counts, largest absolute deltas (computed in Python, ADR 0015; only with equal units) |
 | `explain_outcome(report_id)` | Q6 | report outcome, missing required gates, per gate and metric: target, score, outcome, reason, policy version, source counts, sources missing the target or not evaluable |
 | `cicd_tool()` | — | starts the CI/CD approval; refused unless the current report passed (ADR 0005) |
 

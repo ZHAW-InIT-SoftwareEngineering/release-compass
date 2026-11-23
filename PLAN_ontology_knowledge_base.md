@@ -12,10 +12,10 @@
 | --- | --- |
 | Vocabulary `ontology/release-compass.ttl` | ✅ all classes, properties and `Outcome` individuals |
 | Mappers `src/adapters/outbound/ontology/` | ✅ `report_triples` → `gate_triples` → `metric_triples`; `target_triples`; `assessment_triples` |
-| Port `ReportRepository` + adapter `TurtleKnowledgeBase` | ✅ import, assessment (`unassessed_reports`, `gate_types`, `measurements`, `add_gate_assessment`, `apply_rules`), `save` |
+| Port `ReportRepository` + adapter `TurtleKB` | ✅ import, assessment (`unassessed_reports`, `gate_types`, `measurements`, `add_gate_assessment`, `apply_rules`), `save` |
 | Import use case (step 3) | ✅ |
 | Assessment use case and rules (step 4) | ✅ `AssessmentService`, `rules/*.rq` |
-| SQLite adapter (step 6) | ✅ `SQLiteReportRepository` implements `ReportRepository`; rules in Python |
+| SQLite adapter (step 6) | ✅ `SQLiteDB` implements `ReportRepository`; rules in Python |
 | Queries and tools (step 5) | ✅ `ReportQuestions` port, `queries/*.rq` / SQL, `harness/tools/report_tools.py` |
 
 ## Decisions made during implementation
@@ -181,7 +181,7 @@ HTML ─► HTMLReport (ADR 0011 mapping, unchanged) ─► dataclass (adapter-i
     gate_type, metric, statistic)`, `add_gate_assessment(report_id, gate_type,
     acceptance, targets, policy_version)` (also writes the version's targets)
   - `save()`; step 4 adds a method to apply the rules
-- New adapter `src/adapters/outbound/ontology/turtle_knowledge_base.py`
+- New adapter `src/adapters/outbound/ontology/turtle_kb.py`
   (✅ facts graph, `data/kb/facts.ttl`, atomic save via a `.tmp` file):
   - holds an RDFLib graph for the facts and one for the current assessment
   - loads and saves the `.ttl` files
@@ -211,7 +211,7 @@ dedupe, aliases, reject backdated reports, sequence numbers.
 - It depends only on `ReportRepository` (`import_state`, `get_by_fingerprint`,
   `save_import_batch`), so it has no SPARQL and switching storage changes only
   the composition root.
-- `TurtleKnowledgeBase` answers these with SPARQL from
+- `TurtleKB` answers these with SPARQL from
   `src/adapters/outbound/ontology/queries/`. Reports carry `ai2core:has_id`, so
   queries find them without parsing IRIs.
 - `chat_session.py` imports into `kb_dir` (`data/kb`, git-ignored) and returns
@@ -249,7 +249,8 @@ adapter); `ReportQuestionService` checks reports exist and names missing
 required gates; tools in `src/harness/tools/report_tools.py` cut source lists
 to eight entries. `compare_measurements.rq` joins two subqueries by source
 (a single pattern took 120 s on the real report, now under 1 s). Tool-error
-tests restored. Original notes:
+tests restored. Since 2026-11-23 the deltas are computed in Python and
+the compare queries are removed (ADR 0015). Original notes:
 
 | Tool | Question | Returns |
 | --- | --- | --- |
@@ -270,7 +271,7 @@ tests restored. Original notes:
 
 ### 6. SQLite as a second adapter (✅ DONE 2026-11-18, pulled before step 5)
 
-Done: `SQLiteReportRepository` stores the same facts (reports, source paths,
+Done: `SQLiteDB` stores the same facts (reports, source paths,
 gates, measurements) and results (targets, gate, metric, source and report
 assessments) in tables and derives history, outcomes and baselines in
 Python, reusing `combine_outcomes`. The gate registry moved to
@@ -282,7 +283,7 @@ Older SQLite files are rejected (schema version 2); delete and re-import.
 `tests/application/use_cases/test_assess_reports.py` runs the same rule
 scenarios against both stores. Original notes:
 
-SQLite is kept. `SQLiteReportRepository` implements `ReportRepository`, so the
+SQLite is kept. `SQLiteDB` implements `ReportRepository`, so the
 composition root can choose either store; the import and assessment tests then
 run against both. What becomes obsolete is only the old evidence model:
 - the `report_history.py`, `report_reader.py` and `report_writer.py` ports
@@ -301,7 +302,7 @@ adapter; the knowledge base does it with SPARQL rules.
 Tests use stdlib `unittest` and mirror `src/`:
 - ✅ `tests/ontology/test_release_compass.py`: vocabulary declarations
   (types, domains, ranges, functional properties)
-- ✅ `tests/adapters/outbound/ontology/test_turtle_knowledge_base.py`:
+- ✅ `tests/adapters/outbound/ontology/test_turtle_kb.py`:
   save/reload round trip, no duplicates, SELECT values and bindings; still to
   add: facts file unchanged after assessment
 - ✅ `tests/adapters/outbound/ontology/test_report_triples.py`: IRIs, types,

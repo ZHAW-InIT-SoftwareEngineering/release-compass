@@ -10,6 +10,7 @@ from typing import Protocol
 from uuid import UUID
 
 from src.domain.assessment import Outcome
+from src.domain.scoring import Measurement
 
 
 @dataclass(frozen=True)
@@ -41,18 +42,6 @@ class Baselines:
     report_id: UUID
     baseline_report_id: UUID | None
     gates: list[GateBaseline]
-
-
-@dataclass(frozen=True)
-class MeasurementChange:
-    """Q5: one source measured in both reports; delta only with equal units."""
-
-    source: str
-    unit: str | None
-    baseline_unit: str | None
-    current: float | None
-    baseline: float | None
-    delta: float | None
 
 
 @dataclass(frozen=True)
@@ -95,15 +84,10 @@ class ReportQuestions(Protocol):
 
     def baselines(self, report_id: UUID) -> Baselines | None: ...
 
-    def compare_measurements(
-        self,
-        report_id: UUID,
-        baseline_report_id: UUID,
-        gate_type: str,
-        metric: str,
-        statistic: str,
-    ) -> list[MeasurementChange]:
-        """Measurements of the same source, metric and statistic, by source."""
+    def measurements(
+        self, report_id: UUID, gate_type: str, metric: str, statistic: str
+    ) -> list[Measurement]:
+        """Q5 input: one statistic of a gate run, compared in Python (ADR 0015)."""
         ...
 
     def gate_results(self, report_id: UUID) -> list[GateResult]:

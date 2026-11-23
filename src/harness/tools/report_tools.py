@@ -20,6 +20,8 @@ from src.application.use_cases.answer_report_questions import (
     ReportNotFoundError,
     ReportQuestionService,
 )
+from src.domain.gates.registry import GATE_KINDS
+from src.harness.tools.cicd_tools import cicd_tool
 from src.harness.tools.common import report_uuid, to_json
 
 LIST_LIMIT = 8
@@ -42,6 +44,12 @@ def _expected_errors(function: Callable[..., str]) -> Callable[..., str]:
             ) from error
 
     return wrapper
+
+
+def build_tools(service: ReportQuestionService) -> list[BaseTool]:
+    """The competency-question tools plus the CI/CD tool."""
+    comparable = {kind.name: kind.supported for kind in GATE_KINDS.values()}
+    return [*build_report_tools(service, comparable), cicd_tool]
 
 
 def build_report_tools(
@@ -77,6 +85,7 @@ def build_report_tools(
         result = service.baselines(report_uuid(report_id))
         return to_json(
             {
+                "selection_policy": BASELINE_POLICY,
                 "report_id": result.report_id,
                 "baseline_report_id": result.baseline_report_id,
                 "gates": [
@@ -87,7 +96,6 @@ def build_report_tools(
                     }
                     for gate in result.gates
                 ],
-                "selection_policy": BASELINE_POLICY,
             }
         )
 

@@ -6,15 +6,15 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from src.adapters.outbound.html_report import HTMLReport
-from src.adapters.outbound.ontology.turtle_knowledge_base import TurtleKnowledgeBase
-from src.adapters.outbound.sqlite.sqlite_report_repository import SQLiteReportRepository
+from src.adapters.outbound.ontology.turtle_kb import TurtleKB
+from src.adapters.outbound.sqlite.sqlite_db import SQLiteDB
 from src.adapters.outbound.yaml_target_source import YamlTargetSource
 from src.application.performance_assessment import build_performance_assessment_service
 from src.application.use_cases.answer_report_questions import ReportQuestionService
 from src.application.use_cases.import_reports import ReportInput, import_reports
 from src.configs.ingestion.html_mapping import load_html_mapping
 from src.domain.gates.performance.performance_gate import PerformanceGate
-from src.harness.tools.build_tools import build_tools
+from src.harness.tools.report_tools import build_tools
 
 ROOT = Path(__file__).resolve().parents[2]
 REPORT_PATH = (
@@ -61,8 +61,8 @@ class RealReportFlowTests(unittest.TestCase):
         return imported.report_id, service.version
 
     def test_knowledge_base_flow(self):
-        report_id, version = self.import_and_assess(TurtleKnowledgeBase(self.directory))
-        reopened = TurtleKnowledgeBase(self.directory)
+        report_id, version = self.import_and_assess(TurtleKB(self.directory))
+        reopened = TurtleKB(self.directory)
         reopened.open_assessment(version)
         (stored,) = reopened.select(KB_OUTCOME, {"id": str(report_id)})
         self.assertEqual(
@@ -73,7 +73,7 @@ class RealReportFlowTests(unittest.TestCase):
 
     def test_sqlite_flow(self):
         path = self.directory / "reports.sqlite3"
-        repository = SQLiteReportRepository(path)
+        repository = SQLiteDB(path)
         self.addCleanup(repository.close)
         report_id, version = self.import_and_assess(repository)
         connection = sqlite3.connect(path)
@@ -89,10 +89,10 @@ class RealReportFlowTests(unittest.TestCase):
 
     def test_both_stores_give_the_same_tool_answers(self):
         """The real report's tool answers are equal and short enough for the LLM."""
-        sqlite_store = SQLiteReportRepository(self.directory / "reports.sqlite3")
+        sqlite_store = SQLiteDB(self.directory / "reports.sqlite3")
         self.addCleanup(sqlite_store.close)
         answers = []
-        for store in (TurtleKnowledgeBase(self.directory / "kb"), sqlite_store):
+        for store in (TurtleKB(self.directory / "kb"), sqlite_store):
             report_id, _ = self.import_and_assess(store)
             tools = {
                 tool.name: tool
