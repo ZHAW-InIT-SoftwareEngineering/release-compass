@@ -38,7 +38,7 @@ flowchart TB
         llm <-- "other tool calls / results" --> tools
     end
 
-    openrouter[("<b>OpenRouter</b><br/>LLM API")]
+    openrouter[("<b>LLM API</b> (system.llm)<br/>OpenRouter (default) · SGLang")]
     phoenix[("<b>Phoenix</b><br/>trace viewer")]
     github[("<b>GitHub Actions</b><br/>repository_dispatch")]
 
@@ -135,7 +135,7 @@ is running.
 | `configs/application/local.yaml` | Report inputs, storage backend, fallback timestamps (see [below](#application-config)) |
 | `configs/gates/performance/performance_gate.yaml` | Metric acceptance thresholds |
 | `configs/ingestion/*.yaml` | How values are extracted from each tool's HTML report |
-| `configs/llm/openrouter.yaml` | LLM settings; its named API key is read from `.env` (see [Environment](#environment)) |
+| `configs/llm/openrouter.yaml`, `configs/llm/sglang.yaml` | LLM endpoint settings, selected by `system.llm`; the named API key is read from `.env` (see [Environment](#environment), [Self-hosted LLM](#self-hosted-llm)) |
 | `configs/cicd/github_dispatch.yaml` | GitHub repository and `repository_dispatch` event type triggered by `cicd_tool`; its named token is read from `.env` |
 | `configs/trace/trace.yaml` | Tracing (see [Trace](#trace)) |
 
@@ -162,6 +162,7 @@ system:
   store: knowledge_base   # or sqlite
   kb_dir: data/kb         # required when store is knowledge_base
   db_path: data/database/release_compass.sqlite3  # required when store is sqlite
+  llm: configs/llm/openrouter.yaml  # or configs/llm/sglang.yaml
 
 ingestion:
   mappings:
@@ -179,6 +180,8 @@ data:
 
 - `system.store` selects the repository adapter; only the matching path
   (`kb_dir` or `db_path`) is required. Both are generated and git-ignored.
+- `system.llm` selects the LLM endpoint config; it defaults to OpenRouter (see
+  [Self-hosted LLM](#self-hosted-llm)).
 - `ingestion.mappings` maps each source name to a mapping file that describes
   how values are extracted from that tool's HTML report (e.g.
   `configs/ingestion/locust.yaml` for Locust).
@@ -189,6 +192,44 @@ data:
   `data/raw/reports/example_reports/` are configured by default.
 - Imports are ordered by timestamp; adding a report older than the latest
   stored one is rejected.
+
+## Self-hosted LLM
+
+OpenRouter is the default and needs no GPU. On a machine with an NVIDIA GPU,
+the agent can instead use a model served by SGLang in Docker
+([ADR 0016](docs/adrs/0016_self_host_the_llm_with_sglang.md)). This needs the
+NVIDIA driver and the NVIDIA Container Toolkit (Linux or Windows with WSL2).
+
+1. Generate `SGLANG_API_KEY` and add it to `.env`. It is not issued by any
+   provider: it is a secret you create yourself, and it only has to match on
+   both sides. The `sglang` service starts the server with it (`--api-key`),
+   and the agent sends the same value from `.env`, so one entry covers both.
+   Any random string works, e.g.:
+
+   ```bash
+   echo "SGLANG_API_KEY=\"$(openssl rand -hex 32)\"" >> .env
+   ```
+
+   The server rejects requests without the matching key. Set `HF_TOKEN`
+   as well for gated models.
+2. Set `system.llm: configs/llm/sglang.yaml` in
+   `configs/application/local.yaml`.
+3. Build, start the server and run the agent:
+
+```bash
+docker compose -f docker/compose.yaml build
+docker compose -f docker/compose.yaml --profile sglang up -d sglang
+docker compose -f docker/compose.yaml --profile sglang run --rm agent
+```
+
+The first start downloads the model. The `sglang` service in
+`docker/compose.yaml` sets the model (`--model-path`, which must match
+`model_name` in `configs/llm/sglang.yaml`) and its
+[tool-call parser](https://docs.sglang.io/advanced_features/tool_parser.html),
+which turns the model's tool-call text into OpenAI `tool_calls`; change both
+together. The default, Qwen2.5-7B-Instruct-AWQ with a 16k context, fits a
+10 GB GPU. When the agent runs on the host instead of in Docker, use
+`base_url: http://localhost:30000/v1`.
 
 ## Trace
 
@@ -210,6 +251,8 @@ API keys are read only from the `.env` file in the project root (values set in t
 | Key | Used by | Description |
 | --- | --- | --- |
 | `OPENROUTER_API_KEY` | `configs/llm/openrouter.yaml` | API key for OpenRouter |
+| `SGLANG_API_KEY` | `configs/llm/sglang.yaml`, `sglang` compose service | Self-generated secret (e.g. `openssl rand -hex 32`) that the agent and the self-hosted SGLang server must share; only needed when `system.llm` selects SGLang (see [Self-hosted LLM](#self-hosted-llm)) |
+| `HF_TOKEN` | `sglang` compose service | Optional Hugging Face token for gated models |
 | `GITHUB_DISPATCH_TOKEN` | `configs/cicd/github_dispatch.yaml` | Fine-grained GitHub PAT for the target repository with *Contents: Read and write* ([required for `repository_dispatch`](https://docs.github.com/en/rest/repos/repos#create-a-repository-dispatch-event)); without it, only `cicd_tool` fails |
 
 Create `.env` from the template [`.env.example`](.env.example):

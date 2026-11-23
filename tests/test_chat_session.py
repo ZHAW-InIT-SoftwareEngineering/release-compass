@@ -15,6 +15,8 @@ EXAMPLE_REPORT = Path(
     "data/raw/reports/example_reports/TeaStoreReports/Locust/Locust_TeaStore_Report_Original.html"
 )
 LOCUST_MAPPING = Path("configs/ingestion/locust.yaml")
+OPENROUTER_CONFIG = Path("configs/llm/openrouter.yaml")
+SGLANG_CONFIG = Path("configs/llm/sglang.yaml")
 
 
 class BuildChatSessionTests(unittest.TestCase):
@@ -23,13 +25,14 @@ class BuildChatSessionTests(unittest.TestCase):
         self.addCleanup(directory.cleanup)
         self.kb_dir = Path(directory.name) / "kb"
 
-    def build(self, reports, store="knowledge_base"):
+    def build(self, reports, store="knowledge_base", llm=OPENROUTER_CONFIG):
         config = LocalConfig.model_validate(
             {
                 "system": {
                     "store": store,
                     "kb_dir": self.kb_dir,
                     "db_path": self.kb_dir.parent / "reports.sqlite3",
+                    "llm": llm,
                 },
                 "ingestion": {"mappings": {"locust": LOCUST_MAPPING}},
                 "data": {"reports": reports},
@@ -38,11 +41,13 @@ class BuildChatSessionTests(unittest.TestCase):
         self.llm = Mock()
         with (
             patch("src.chat_session.load_local_config", return_value=config),
-            patch("src.chat_session.init_llm", return_value=self.llm),
+            patch("src.chat_session.init_llm", return_value=self.llm) as init_llm,
             patch("src.chat_session.GitHubDispatch") as dispatch,
         ):
             self.dispatch = dispatch.return_value
-            return build_chat_session()
+            session = build_chat_session()
+            ((self.llm_config,), _) = init_llm.call_args
+            return session
 
     def bound_tool(self, name):
         (tools,), _ = self.llm.bind_tools.call_args
@@ -99,6 +104,13 @@ class BuildChatSessionTests(unittest.TestCase):
             connection.execute("SELECT outcome FROM report_assessments").fetchall(),
             [("pass",)],
         )
+
+    def test_uses_llm_config_selected_in_local_config(self):
+        self.build([{"path": EXAMPLE_REPORT, "source": "locust"}], llm=SGLANG_CONFIG)
+        self.assertEqual(self.llm_config.api_key_env, "SGLANG_API_KEY")
+
+        self.build([{"path": EXAMPLE_REPORT, "source": "locust"}])
+        self.assertEqual(self.llm_config.api_key_env, "OPENROUTER_API_KEY")
 
     def test_requires_a_stored_report(self):
         with self.assertRaisesRegex(ValueError, "At least one stored report"):

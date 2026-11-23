@@ -1,0 +1,12 @@
+# Self-hosted SGLang server (ADR 0016), started with:
+#   docker compose -f docker/compose.yaml --profile sglang up -d sglang
+# model_name must match --model-path of the sglang service in docker/compose.yaml.
+# base_url uses the compose service name; use http://localhost:30000/v1 when
+# the agent runs on the host instead of in Docker.
+model_name: "Qwen/Qwen2.5-7B-Instruct-AWQ"
+base_url: "http://sglang:30000/v1"
+api_key_env: "SGLANG_API_KEY"
+temperature: 0.6
+# The server's 16k context also holds the system prompt, tools and history.
+max_completion_tokens: 4000
+max_retries: 3
