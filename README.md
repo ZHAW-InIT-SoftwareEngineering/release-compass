@@ -253,7 +253,7 @@ API keys are read only from the `.env` file in the project root (values set in t
 | `OPENROUTER_API_KEY` | `configs/llm/openrouter.yaml` | API key for OpenRouter |
 | `SGLANG_API_KEY` | `configs/llm/sglang.yaml`, `sglang` compose service | Self-generated secret (e.g. `openssl rand -hex 32`) that the agent and the self-hosted SGLang server must share; only needed when `system.llm` selects SGLang (see [Self-hosted LLM](#self-hosted-llm)) |
 | `HF_TOKEN` | `sglang` compose service | Optional Hugging Face token for gated models |
-| `GITHUB_DISPATCH_TOKEN` | `configs/cicd/github_dispatch.yaml` | Fine-grained GitHub PAT for the target repository with *Contents: Read and write* ([required for `repository_dispatch`](https://docs.github.com/en/rest/repos/repos#create-a-repository-dispatch-event)); without it, only `cicd_tool` fails |
+| `GITHUB_DISPATCH_TOKEN` | `configs/cicd/github_dispatch.yaml` | Fine-grained GitHub PAT for the target repository with *Contents: Read and write* ([required for `repository_dispatch`](https://docs.github.com/en/rest/repos/repos#create-a-repository-dispatch-event)); without it, only `cicd_tool` fails (see [below](#github-dispatch-token)) |
 
 Create `.env` from the template [`.env.example`](.env.example):
 
@@ -265,3 +265,23 @@ cp .env.example .env
 OPENROUTER_API_KEY="sk-or-..."
 GITHUB_DISPATCH_TOKEN="github_pat_..."
 ```
+
+### GitHub dispatch token
+
+`cicd_tool` sends a `repository_dispatch` event to the repository set by
+`owner`/`repo` in `configs/cicd/github_dispatch.yaml`. To create the token
+([GitHub docs](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token)):
+
+1. On GitHub, open **Settings → Developer settings → Personal access tokens →
+   Fine-grained tokens → Generate new token**.
+2. Set **Resource owner** to the repository owner (e.g.
+   `ZHAW-InIT-SoftwareEngineering`); an organization may need to approve the
+   token first.
+3. Under **Repository access**, choose **Only select repositories** and select
+   the target repository (e.g. `TeaStore_internal`).
+4. Under **Repository permissions**, set **Contents** to **Read and write**
+   (**Metadata: Read-only** is added automatically).
+5. Generate the token and set it as `GITHUB_DISPATCH_TOKEN` in `.env`.
+
+The target repository needs a workflow on its default branch that listens for
+`repository_dispatch` with the configured `event_type`.
