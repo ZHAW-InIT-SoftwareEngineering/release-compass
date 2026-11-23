@@ -14,7 +14,7 @@ Phoenix.
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh  # 1. install uv (once)
 uv sync                                          # 2. install Python 3.14 and the locked dependencies
-cp .env.example .env                             # 3. then set OPENROUTER_API_KEY
+cp .env.example .env                             # 3. then set OPENROUTER_API_KEY and GITHUB_DISPATCH_TOKEN
 uv run python -m src.main                        # 4. import reports and start the chat
 ```
 
@@ -40,6 +40,7 @@ flowchart TB
 
     openrouter[("<b>OpenRouter</b><br/>LLM API")]
     phoenix[("<b>Phoenix</b><br/>trace viewer")]
+    github[("<b>GitHub Actions</b><br/>repository_dispatch")]
 
     subgraph app["<b>Application</b> · src/application"]
         importuc["<b>Import reports</b><br/>(startup)"]
@@ -72,6 +73,7 @@ flowchart TB
     llm -- "prompts" --> openrouter
     tools -. "spans" .-> phoenix
     tools -- "asks" --> questions
+    tools -- "cicd_tool dispatch" --> github
     app -- "uses" --> domain
     importuc --> html
     assess --> targetsrc
@@ -103,7 +105,7 @@ commands are run from the repository root.
 | `docker/trace.yaml` | Replaces `configs/trace/trace.yaml` in the container so traces go to the `phoenix` service instead of a self-started server |
 
 ```bash
-cp .env.example .env                                 # then set your API key
+cp .env.example .env                                 # then set your API key and GitHub token
 docker compose -f docker/compose.yaml build
 docker compose -f docker/compose.yaml run --rm agent # interactive chat
 docker compose -f docker/compose.yaml down           # stop Phoenix afterwards
@@ -134,6 +136,7 @@ is running.
 | `configs/gates/performance/performance_gate.yaml` | Metric acceptance thresholds |
 | `configs/ingestion/*.yaml` | How values are extracted from each tool's HTML report |
 | `configs/llm/openrouter.yaml` | LLM settings; its named API key is read from `.env` (see [Environment](#environment)) |
+| `configs/cicd/github_dispatch.yaml` | GitHub repository and `repository_dispatch` event type triggered by `cicd_tool`; its named token is read from `.env` |
 | `configs/trace/trace.yaml` | Tracing (see [Trace](#trace)) |
 
 ### Adding a report
@@ -202,11 +205,12 @@ Tracing is configured in `configs/trace/trace.yaml`:
 
 ## Environment
 
-API keys are read only from the `.env` file in the project root (values set in the shell are ignored). The key needed depends on the `api_key_env` field of the LLM config in use:
+API keys are read only from the `.env` file in the project root (values set in the shell are ignored). The keys needed depend on the `api_key_env` field of the LLM config and the `token_env` field of the CI/CD config:
 
 | Key | Used by | Description |
 | --- | --- | --- |
 | `OPENROUTER_API_KEY` | `configs/llm/openrouter.yaml` | API key for OpenRouter |
+| `GITHUB_DISPATCH_TOKEN` | `configs/cicd/github_dispatch.yaml` | Fine-grained GitHub PAT for the target repository with *Contents: Read and write* ([required for `repository_dispatch`](https://docs.github.com/en/rest/repos/repos#create-a-repository-dispatch-event)); without it, only `cicd_tool` fails |
 
 Create `.env` from the template [`.env.example`](.env.example):
 
@@ -216,4 +220,5 @@ cp .env.example .env
 
 ```dotenv
 OPENROUTER_API_KEY="sk-or-..."
+GITHUB_DISPATCH_TOKEN="github_pat_..."
 ```

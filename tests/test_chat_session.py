@@ -39,8 +39,14 @@ class BuildChatSessionTests(unittest.TestCase):
         with (
             patch("src.chat_session.load_local_config", return_value=config),
             patch("src.chat_session.init_llm", return_value=self.llm),
+            patch("src.chat_session.GitHubDispatch") as dispatch,
         ):
+            self.dispatch = dispatch.return_value
             return build_chat_session()
+
+    def bound_tool(self, name):
+        (tools,), _ = self.llm.bind_tools.call_args
+        return next(tool for tool in tools if tool.name == name)
 
     def bound_tool_names(self):
         (tools,), _ = self.llm.bind_tools.call_args
@@ -70,6 +76,18 @@ class BuildChatSessionTests(unittest.TestCase):
             "SELECT ?report WHERE { ?report a release-compass:Report }"
         )
         self.assertEqual(len(rows), 1)
+
+    def test_cicd_tool_dispatches_current_report_payload(self):
+        session = self.build([{"path": EXAMPLE_REPORT, "source": "locust"}])
+
+        self.bound_tool("cicd_tool").invoke({})
+
+        self.dispatch.trigger.assert_called_once_with(
+            {
+                "report_id": session.trace_metadata["current_report_id"],
+                "outcome": "pass",
+            }
+        )
 
     def test_imports_and_assesses_in_sqlite_when_configured(self):
         session = self.build([{"path": EXAMPLE_REPORT, "source": "locust"}], "sqlite")

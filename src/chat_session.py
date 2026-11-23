@@ -5,6 +5,7 @@ from typing import Protocol
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph.state import CompiledStateGraph
 
+from src.adapters.outbound.github_dispatch import GitHubDispatch
 from src.adapters.outbound.html_report import HTMLReport
 from src.adapters.outbound.ontology.turtle_kb import TurtleKB
 from src.adapters.outbound.sqlite.sqlite_db import SQLiteDB
@@ -18,15 +19,19 @@ from src.application.use_cases.answer_report_questions import (
 )
 from src.application.use_cases.import_reports import ReportInput, import_reports
 from src.configs.application.local import SystemConfig, load_local_config
+from src.configs.cicd.github_dispatch_config import load_github_dispatch_config
+from src.configs.env import read_env_file
 from src.configs.ingestion.html_mapping import load_html_mapping
 from src.configs.llm.llm_config import load_llm_config
 from src.domain.assessment import Outcome
 from src.domain.history import report_order
 from src.harness.graph import build_graph
 from src.harness.system.system_prompt import system_prompt
+from src.harness.tools.cicd_tools import build_cicd_tool
 from src.harness.tools.report_tools import build_tools
 from src.llm.llm import init_llm
 
+CICD_CONFIG_PATH = Path("configs/cicd/github_dispatch.yaml")
 LLM_CONFIG_PATH = Path("configs/llm/openrouter.yaml")
 LOCAL_CONFIG_PATH = Path("configs/application/local.yaml")
 PERFORMANCE_CONFIG_PATH = Path("configs/gates/performance/performance_gate.yaml")
@@ -98,15 +103,25 @@ def build_chat_session() -> ChatSession:
     assessment.prepare()
     questions = ReportQuestionService(repository, assessment.gates)
 
-    tools = build_tools(questions)
-    model_with_tools = init_llm(load_llm_config(LLM_CONFIG_PATH)).bind_tools(tools)
-
     def current_outcome() -> Outcome | None:
         """The current report's outcome; None when it is missing."""
         try:
             return questions.describe_report(current_report.report_id).outcome
         except ReportNotFoundError:
             return None
+
+    def deployment_payload() -> dict[str, str]:
+        """The dispatch's client payload; the graph only lets 'pass' through."""
+        return {
+            "report_id": str(current_report.report_id),
+            "outcome": current_outcome() or "missing",
+        }
+
+    cicd_config = load_github_dispatch_config(CICD_CONFIG_PATH)
+    # A missing token only fails the CI/CD call, so report questions still work.
+    dispatch = GitHubDispatch(cicd_config, read_env_file(cicd_config.token_env))
+    tools = [*build_tools(questions), build_cicd_tool(dispatch, deployment_payload)]
+    model_with_tools = init_llm(load_llm_config(LLM_CONFIG_PATH)).bind_tools(tools)
 
     # One checkpointer for the process; conversations are separated by thread_id.
     graph = build_graph(model_with_tools, tools, MemorySaver(), current_outcome)

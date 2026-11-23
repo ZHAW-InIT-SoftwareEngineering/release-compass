@@ -21,7 +21,6 @@ from src.application.use_cases.answer_report_questions import (
     ReportQuestionService,
 )
 from src.domain.gates.registry import GATE_KINDS
-from src.harness.tools.cicd_tools import cicd_tool
 from src.harness.tools.common import report_uuid, to_json
 
 LIST_LIMIT = 8
@@ -47,9 +46,9 @@ def _expected_errors(function: Callable[..., str]) -> Callable[..., str]:
 
 
 def build_tools(service: ReportQuestionService) -> list[BaseTool]:
-    """The competency-question tools plus the CI/CD tool."""
+    """The competency-question tools; the CI/CD tool is built separately."""
     comparable = {kind.name: kind.supported for kind in GATE_KINDS.values()}
-    return [*build_report_tools(service, comparable), cicd_tool]
+    return build_report_tools(service, comparable)
 
 
 def build_report_tools(

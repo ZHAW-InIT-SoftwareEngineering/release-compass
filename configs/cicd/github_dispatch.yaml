@@ -1,0 +1,8 @@
+# GitHub repository_dispatch target for cicd_tool.
+# The workflow must listen for `repository_dispatch` with this event type
+# and exist on the target repository's default branch.
+owner: "ZHAW-InIT-SoftwareEngineering"
+repo: "TeaStore_internal"
+event_type: "dummy-trigger"
+token_env: "GITHUB_DISPATCH_TOKEN"
+timeout_seconds: 10
