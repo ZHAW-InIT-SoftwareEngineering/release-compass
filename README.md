@@ -14,7 +14,7 @@ Phoenix.
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh  # 1. install uv (once)
 uv sync                                          # 2. install Python 3.14 and the locked dependencies
-cp .env.example .env                             # 3. then set OPENROUTER_API_KEY
+cp .env.example .env                             # 3. then set OPENROUTER_API_KEY and GITHUB_DISPATCH_TOKEN
 uv run python -m src.main                        # 4. import reports and start the chat
 ```
 
@@ -40,6 +40,7 @@ flowchart TB
 
     openrouter[("<b>OpenRouter</b><br/>LLM API")]
     phoenix[("<b>Phoenix</b><br/>trace viewer")]
+    github[("<b>GitHub Actions</b><br/>repository_dispatch")]
 
     subgraph app["<b>Application</b> · src/application"]
         importuc["<b>Import reports</b><br/>(startup)"]
@@ -72,6 +73,7 @@ flowchart TB
     llm -- "prompts" --> openrouter
     tools -. "spans" .-> phoenix
     tools -- "asks" --> questions
+    tools -- "cicd_tool dispatch" --> github
     app -- "uses" --> domain
     importuc --> html
     assess --> targetsrc
@@ -90,6 +92,69 @@ Repeat imports reuse stored UUIDs; later backdated additions are rejected. The
 agent explains deterministic results through its report tools (`describe_report`,
 `get_previous_report`, `get_baseline`, `compare_gate`, `explain_outcome`).
 
+## Action trigger
+
+Besides explaining results, the agent can trigger a CI/CD action through
+`cicd_tool`. It currently starts the GitHub Actions workflow of
+[ZHAW-InIT-SoftwareEngineering/TeaStore_internal](https://github.com/ZHAW-InIT-SoftwareEngineering/TeaStore_internal)
+by sending a
+[`repository_dispatch`](https://docs.github.com/en/rest/repos/repos#create-a-repository-dispatch-event)
+event. The harness, not the LLM, decides whether the call runs:
+
+- The current report's outcome must be `pass`; otherwise the call is refused
+  without asking.
+- The chat pauses and asks for approval; only an explicit `yes` runs it.
+- It runs at most once per chat session and only as the sole tool call of a
+  model turn.
+
+The application builds the `client_payload` (`report_id`, `outcome`); the
+model cannot set it. The agent only confirms that GitHub accepted the request
+(HTTP 204); the workflow run's result is not tracked.
+
+### Target repository
+
+The target is set in `configs/cicd/github_dispatch.yaml`:
+
+```yaml
+owner: "ZHAW-InIT-SoftwareEngineering"
+repo: "TeaStore_internal"
+event_type: "dummy-trigger"        # must match the target workflow
+token_env: "GITHUB_DISPATCH_TOKEN" # name of the token key in .env
+timeout_seconds: 10
+```
+
+The target repository needs a workflow on its default branch that listens for
+the configured `event_type`, e.g.:
+
+```yaml
+on:
+  repository_dispatch:
+    types: [dummy-trigger]
+```
+
+The payload is available there as `github.event.client_payload.report_id` and
+`github.event.client_payload.outcome`.
+
+### GitHub dispatch token
+
+The dispatch is authorized with a fine-grained personal access token, read
+from `.env` under the name set by `token_env`. Without it, only `cicd_tool`
+fails; report questions still work. To create the token
+([GitHub docs](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token)):
+
+1. On GitHub, open **Settings → Developer settings → Personal access tokens →
+   Fine-grained tokens → Generate new token**.
+2. Set **Resource owner** to the repository owner (e.g.
+   `ZHAW-InIT-SoftwareEngineering`); an organization may need to approve the
+   token first.
+3. Under **Repository access**, choose **Only select repositories** and select
+   the target repository (e.g. `TeaStore_internal`).
+4. Under **Repository permissions**, set **Contents** to **Read and write**
+   (**Metadata: Read-only** is added automatically); this is
+   [required for `repository_dispatch`](https://docs.github.com/en/rest/repos/repos#create-a-repository-dispatch-event).
+5. Generate the token and set it as `GITHUB_DISPATCH_TOKEN` in `.env`
+   (see [Environment](#environment)).
+
 ## Docker
 
 The `docker/` folder runs the agent together with a Phoenix trace server. All
@@ -103,7 +168,7 @@ commands are run from the repository root.
 | `docker/trace.yaml` | Replaces `configs/trace/trace.yaml` in the container so traces go to the `phoenix` service instead of a self-started server |
 
 ```bash
-cp .env.example .env                                 # then set your API key
+cp .env.example .env                                 # then set your API key and GitHub token
 docker compose -f docker/compose.yaml build
 docker compose -f docker/compose.yaml run --rm agent # interactive chat
 docker compose -f docker/compose.yaml down           # stop Phoenix afterwards
@@ -134,6 +199,7 @@ is running.
 | `configs/gates/performance/performance_gate.yaml` | Metric acceptance thresholds |
 | `configs/ingestion/*.yaml` | How values are extracted from each tool's HTML report |
 | `configs/llm/openrouter.yaml` | LLM settings; its named API key is read from `.env` (see [Environment](#environment)) |
+| `configs/cicd/github_dispatch.yaml` | GitHub repository and `repository_dispatch` event type triggered by `cicd_tool` (see [Action trigger](#action-trigger)); its named token is read from `.env` |
 | `configs/trace/trace.yaml` | Tracing (see [Trace](#trace)) |
 
 ### Adding a report
@@ -202,11 +268,12 @@ Tracing is configured in `configs/trace/trace.yaml`:
 
 ## Environment
 
-API keys are read only from the `.env` file in the project root (values set in the shell are ignored). The key needed depends on the `api_key_env` field of the LLM config in use:
+API keys are read only from the `.env` file in the project root (values set in the shell are ignored). The keys needed depend on the `api_key_env` field of the LLM config and the `token_env` field of the CI/CD config:
 
 | Key | Used by | Description |
 | --- | --- | --- |
 | `OPENROUTER_API_KEY` | `configs/llm/openrouter.yaml` | API key for OpenRouter |
+| `GITHUB_DISPATCH_TOKEN` | `configs/cicd/github_dispatch.yaml` | Fine-grained GitHub PAT for the target repository with *Contents: Read and write*; without it, only `cicd_tool` fails (see [GitHub dispatch token](#github-dispatch-token)) |
 
 Create `.env` from the template [`.env.example`](.env.example):
 
@@ -216,4 +283,5 @@ cp .env.example .env
 
 ```dotenv
 OPENROUTER_API_KEY="sk-or-..."
+GITHUB_DISPATCH_TOKEN="github_pat_..."
 ```
