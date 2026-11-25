@@ -9,7 +9,7 @@ class LLMConfig(BaseModel):
     base_url: AnyHttpUrl
     api_key_env: str
     temperature: float = 0.7
-    max_completion_tokens: int = Field(ge=1, le=1024)
+    max_completion_tokens: int = Field(ge=1, le=8000)
     max_retries: int = Field(ge=2, le=4)
 
 

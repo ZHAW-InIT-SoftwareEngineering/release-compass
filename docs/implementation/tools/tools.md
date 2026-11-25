@@ -1,34 +1,25 @@
 # POC tools
 
-Both tools are bound by the host to one assessment/configuration version.
-The LLM supplies string report UUIDs; services validate them and return
-persisted deterministic evidence. Historical discussion remains in
-[the discussion record](../discussions/01_discussions.md).
+One tool per competency question
+([release-compase-ontology.md](../ontology/release-compase-ontology.md)),
+implemented in `src/harness/tools/report_tools.py`. The LLM passes report
+UUIDs as strings (ADR 0004). Each tool calls one `ReportQuestions` port method,
+so the knowledge base (fixed SPARQL in
+`src/adapters/outbound/ontology/queries/`) and SQLite give the same answers.
+Answers come from the assessment version prepared at startup (ADR 0008,
+ADR 0013). Tools return stored values only; they never calculate.
 
-## compare_performance(report_id)
+| Tool | Question | Returns |
+| --- | --- | --- |
+| `describe_report(report_id)` | Q1 | generated-at, ingestion sequence, source paths, gate types, outcome, `is_root`, previous report ID |
+| `get_previous_report(report_id)` | Q2 | `{report_id, history_end, previous_report}`; failed and unknown reports included |
+| `get_baseline(report_id)` | Q3 | report baseline, each gate's baseline and policy version, selection policy (ADR 0006) |
+| `compare_gate(report_id, baseline_report_id, gate_type, metric, statistic)` | Q5 | matched and compared source counts, largest absolute deltas (computed in Python, ADR 0015; only with equal units) |
+| `explain_outcome(report_id)` | Q6 | report outcome, missing required gates, per gate and metric: target, score, outcome, reason, policy version, source counts, sources missing the target or not evaluable |
+| `cicd_tool()` | — | starts the CI/CD approval; refused unless the current report passed (ADR 0005) |
 
-Returns the report's enriched evidence pack: current and independently selected
-passing report/gate baselines, acceptance results, metric values and unit-aware
-deltas, thresholds, provenance, supporting evidence, and chronological
-predecessor/root references. The model cannot provide a different baseline.
-Acceptance can pass without a baseline; comparison is then unavailable.
+Lists of sources are cut to the first eight entries; the counts stay complete.
+Questions 4, 7 and 8 are out of scope.
 
-## get_previous_report(report_id)
-
-Returns `{report_id, history_end, previous_report}`. The predecessor contains
-its enriched evidence pack under the same assessment version. Failed and
-unknown reports are included. Calling this tool on the root returns
-`history_end: true` and `previous_report: null`.
-
-Full time series and bucket/window collections are retained in SQLite;
-tool responses reference these by evidence-pack ID and structured path.
-HTTP histograms, assessments, weights, and exclusions remain in the
-explanation-facing result. Long violation-period lists include the first eight
-periods and a full stored-evidence reference.
-
-Invalid UUIDs, absent reports, and unavailable assessments produce expected
-tool errors. Unexpected storage/corruption failures propagate. The internal
-explicit-ID comparison remains available for deterministic application callers.
-
-See [ADR 0007](../../adrs/0007_use_provider_performance_assessments.md) and
-[ADR 0008](../../adrs/0008_incremental_import_and_history.md).
+Invalid UUIDs, unknown reports and unsupported metric statistics return a
+tool error to the model. Other failures, e.g. a broken store, propagate.

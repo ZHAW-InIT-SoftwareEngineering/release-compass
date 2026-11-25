@@ -1,0 +1,25 @@
+# The latest earlier passing report (ADR 0006); none without one.
+# Bindings: ?id (report ID), ?graph (assessment graph).
+INSERT { GRAPH ?graph { ?report release-compass:baseline_report ?baseline } }
+WHERE {
+    ?report ai2core:has_id ?id ;
+            release-compass:generated_at ?at ;
+            release-compass:ingestion_sequence ?sequence .
+    ?baseline a release-compass:Report ;
+              release-compass:outcome release-compass:pass ;
+              release-compass:generated_at ?baseline_at ;
+              release-compass:ingestion_sequence ?baseline_sequence .
+    FILTER (?baseline_at < ?at
+            || (?baseline_at = ?at && ?baseline_sequence < ?sequence))
+    FILTER NOT EXISTS {
+        ?later a release-compass:Report ;
+               release-compass:outcome release-compass:pass ;
+               release-compass:generated_at ?later_at ;
+               release-compass:ingestion_sequence ?later_sequence .
+        FILTER ((?later_at > ?baseline_at
+                 || (?later_at = ?baseline_at
+                     && ?later_sequence > ?baseline_sequence))
+                && (?later_at < ?at
+                    || (?later_at = ?at && ?later_sequence < ?sequence)))
+    }
+}

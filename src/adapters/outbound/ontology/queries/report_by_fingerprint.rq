@@ -1,0 +1,12 @@
+# The stored report with the given source fingerprint, one row per source path
+# (RDF keeps no order between paths).
+# Binding: ?fingerprint (SHA-256 of the source HTML bytes).
+SELECT ?id ?generated_at ?sequence ?path
+WHERE {
+    ?report a release-compass:Report ;
+            ai2core:has_id ?id ;
+            release-compass:source_fingerprint ?fingerprint ;
+            release-compass:generated_at ?generated_at .
+    OPTIONAL { ?report release-compass:ingestion_sequence ?sequence }
+    OPTIONAL { ?report release-compass:source_path ?path }
+}

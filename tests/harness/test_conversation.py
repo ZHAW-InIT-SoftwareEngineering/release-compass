@@ -19,7 +19,10 @@ class ConversationTests(unittest.TestCase):
             description="Trigger CI/CD",
         )
         self.model = Mock()
-        self.graph = build_graph(self.model, [tool], MemorySaver())
+        self.outcome = "pass"
+        self.graph = build_graph(
+            self.model, [tool], MemorySaver(), lambda: self.outcome
+        )
         self.conversation = Conversation(
             self.graph, thread_id="test-chat", system_prompt="System prompt"
         )
@@ -139,6 +142,30 @@ class ConversationTests(unittest.TestCase):
             m.tool_call_id for m in state["messages"] if isinstance(m, ToolMessage)
         ]
         self.assertEqual(tool_call_ids, ["first", "second", "third"])
+
+    def test_cicd_is_refused_without_asking_unless_outcome_is_pass(self):
+        for index, outcome in enumerate(("fail", "unknown", None)):
+            with self.subTest(outcome=outcome):
+                self.outcome = outcome
+                conversation = Conversation(
+                    self.graph, thread_id=f"refused-{index}", system_prompt="System"
+                )
+                self.model.invoke.side_effect = [
+                    self.cicd_request(),
+                    AIMessage(content="Not deployable"),
+                ]
+                result = conversation.send("Deploy")
+
+                self.assertEqual(result.reply, "Not deployable")
+                self.assertEqual(result.approvals, ())
+                self.dispatch.assert_not_called()
+                state = self.graph.get_state(
+                    {"configurable": {"thread_id": f"refused-{index}"}}
+                ).values
+                self.assertFalse(state.get("cicd_triggered", False))
+                refusal = state["messages"][-2]
+                self.assertIsInstance(refusal, ToolMessage)
+                self.assertIn(f"outcome is '{outcome or 'missing'}'", refusal.content)
 
     def test_send_is_refused_while_approval_is_pending(self):
         self.model.invoke.return_value = self.cicd_request()

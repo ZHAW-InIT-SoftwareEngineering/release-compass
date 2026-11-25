@@ -2,5 +2,5 @@ model_name: "openrouter/free"
 base_url: "https://openrouter.ai/api/v1"
 api_key_env: "OPENROUTER_API_KEY"
 temperature: 0.6
-max_completion_tokens: 1024
+max_completion_tokens: 8000
 max_retries: 3

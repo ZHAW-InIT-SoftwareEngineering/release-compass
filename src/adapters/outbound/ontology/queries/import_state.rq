@@ -1,0 +1,9 @@
+# Latest stored report time and highest ingestion sequence (ADR 0008).
+# Returns no row when no report is stored.
+SELECT (MAX(?generated_at) AS ?latest_generated_at)
+       (MAX(?sequence) AS ?max_sequence)
+WHERE {
+    ?report a release-compass:Report ;
+            release-compass:generated_at ?generated_at .
+    OPTIONAL { ?report release-compass:ingestion_sequence ?sequence }
+}

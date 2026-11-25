@@ -1,9 +1,7 @@
-"""Report ordering and passing-baseline policy."""
+"""Chronological report order (ADR 0006, ADR 0009)."""
 
 from datetime import UTC, datetime
-from uuid import UUID
 
-from src.domain.evidence import EvidencePack
 from src.domain.report import Report
 
 
@@ -24,20 +22,3 @@ def report_order(report: Report) -> tuple[datetime, int]:
     if report.ingestion_sequence is None:
         raise ValueError(f"Report {report.report_id} has no ingestion sequence")
     return generated_at(report), report.ingestion_sequence
-
-
-def latest_passing(
-    previous: list[Report],
-    packs: dict[UUID, EvidencePack],
-    gate_type: str | None = None,
-) -> Report | None:
-    for report in reversed(previous):
-        pack = packs[report.report_id]
-        if gate_type is None:
-            passing = pack.outcome == "pass"
-        else:
-            gate = pack.gates.get(gate_type)
-            passing = gate is not None and gate.acceptance.outcome == "pass"
-        if passing:
-            return report
-    return None

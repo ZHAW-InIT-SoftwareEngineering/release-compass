@@ -32,7 +32,7 @@ class TracingTests(unittest.TestCase):
             ]
         )
         conversation = Conversation(
-            build_graph(model, [tool], MemorySaver()),
+            build_graph(model, [tool], MemorySaver(), lambda: "pass"),
             thread_id="trace-thread",
             system_prompt="System prompt",
             trace_metadata={"current_report_id": "report-1"},
