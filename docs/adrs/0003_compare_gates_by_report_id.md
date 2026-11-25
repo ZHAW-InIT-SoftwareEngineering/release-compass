@@ -4,11 +4,9 @@ Date: 2026-09-30
 
 ## Status
 
-Accepted
-
-The explicit-ID comparison remains an internal primitive. Its compact,
-two-ID tool contract has been superseded in the chat interface by the
-automatic evidence tools in [ADR 0008](0008_incremental_import_and_history.md).
+Superseded by [ADR 0015](0015_compare_measurements_in_python.md). The
+dataclass model and `ReportReader` below were removed by ADR 0013; the rules
+current minus baseline and `null` for missing values still apply.
 
 ## Context
 

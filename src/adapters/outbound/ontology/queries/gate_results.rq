@@ -1,0 +1,36 @@
+# Q6: each gate's outcome, its metric assessments with targets and scores, and
+# the per-source results they are based on, in the open assessment version.
+# One row per gate, metric and source.
+# Binding: ?id (report ID).
+SELECT ?gate_type ?gate_outcome ?metric ?statistic ?unit ?min ?max ?min_score
+       ?score ?outcome ?reason ?policy_version ?source ?value ?meets_target
+       ?excluded_reason ?source_reason
+WHERE {
+    ?report ai2core:has_id ?id ;
+            release-compass:contains_gate ?gate .
+    ?gate release-compass:gate_type ?gate_type .
+    OPTIONAL { ?gate release-compass:outcome ?gate_outcome }
+    OPTIONAL {
+        ?gate release-compass:has_assessment ?assessment .
+        ?assessment release-compass:assesses ?target ;
+                    release-compass:outcome ?outcome ;
+                    release-compass:policy_version ?policy_version .
+        ?target release-compass:metric_name ?metric ;
+                ai2core:aggregation ?statistic ;
+                release-compass:unit ?unit ;
+                release-compass:min_score ?min_score .
+        OPTIONAL { ?target release-compass:min ?min }
+        OPTIONAL { ?target release-compass:max ?max }
+        OPTIONAL { ?assessment release-compass:score ?score }
+        OPTIONAL { ?assessment release-compass:reason ?reason }
+        OPTIONAL {
+            ?assessment release-compass:based_on ?measurement .
+            ?measurement release-compass:measured_from/release-compass:source_name
+                         ?source .
+            OPTIONAL { ?measurement release-compass:value ?value }
+            OPTIONAL { ?measurement release-compass:meets_target ?meets_target }
+            OPTIONAL { ?measurement release-compass:excluded_reason ?excluded_reason }
+            OPTIONAL { ?measurement release-compass:reason ?source_reason }
+        }
+    }
+}

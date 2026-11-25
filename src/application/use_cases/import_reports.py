@@ -6,8 +6,8 @@ from hashlib import sha256
 from pathlib import Path
 from uuid import UUID
 
-from src.application.ports.outbound.report_history import ReportHistory
 from src.application.ports.outbound.report_ingestion import ReportIngestionPort
+from src.application.ports.outbound.report_repository import ReportRepository
 from src.domain.history import generated_at, report_order
 from src.domain.report import Report
 
@@ -33,7 +33,7 @@ class _ImportBatch:
 def import_reports(
     inputs: list[ReportInput],
     ingestion: ReportIngestionPort,
-    repository: ReportHistory,
+    repository: ReportRepository,
 ) -> list[Report]:
     batch = _new_import_batch(repository)
     for item in inputs:
@@ -42,15 +42,11 @@ def import_reports(
     return batch.selected
 
 
-def _new_import_batch(repository: ReportHistory) -> _ImportBatch:
-    existing = repository.list_reports()
+def _new_import_batch(repository: ReportRepository) -> _ImportBatch:
+    state = repository.import_state()
     return _ImportBatch(
-        latest_stored_at=max(
-            (generated_at(report) for report in existing), default=None
-        ),
-        next_sequence=max(
-            (report.ingestion_sequence or 0 for report in existing), default=0
-        ),
+        latest_stored_at=state.latest_generated_at,
+        next_sequence=state.max_ingestion_sequence,
         pending={},
         aliases={},
         selected=[],
@@ -60,7 +56,7 @@ def _new_import_batch(repository: ReportHistory) -> _ImportBatch:
 def _import_report(
     item: ReportInput,
     ingestion: ReportIngestionPort,
-    repository: ReportHistory,
+    repository: ReportRepository,
     batch: _ImportBatch,
 ) -> None:
     fingerprint = _fingerprint(item.path)
@@ -121,6 +117,6 @@ def _reject_backdated_report(
         raise ValueError(f"Backdated import rejected: {path}")
 
 
-def _persist_import_batch(repository: ReportHistory, batch: _ImportBatch) -> None:
+def _persist_import_batch(repository: ReportRepository, batch: _ImportBatch) -> None:
     reports = sorted(batch.pending.values(), key=report_order)
     repository.save_import_batch(reports, batch.aliases)

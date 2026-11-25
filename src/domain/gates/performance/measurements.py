@@ -9,6 +9,9 @@ from src.domain.gates.performance.performance_gate import (
 )
 from src.domain.scoring import Measure, Measurement
 
+# Names the gate in stored reports and in its target configuration.
+GATE_TYPE = "performance"
+
 # Metrics a target may name, and the fields each may aggregate on.
 SUPPORTED = {
     "response_time": ("mean", "p50", "p90", "maximum"),

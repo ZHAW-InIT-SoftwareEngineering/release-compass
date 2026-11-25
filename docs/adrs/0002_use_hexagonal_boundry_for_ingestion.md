@@ -4,7 +4,7 @@ Date: 2026-09-28
 
 ## Status
 
-Accepted; adapter superseded by 0011
+Accepted; adapter superseded by 0011; model superseded by 0013
 
 ## Context
 

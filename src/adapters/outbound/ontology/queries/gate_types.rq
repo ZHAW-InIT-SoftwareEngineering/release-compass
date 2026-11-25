@@ -1,0 +1,8 @@
+# The gate types a report contains.
+# Binding: ?id (report ID).
+SELECT ?gate_type
+WHERE {
+    ?report ai2core:has_id ?id ;
+            release-compass:contains_gate ?gate .
+    ?gate release-compass:gate_type ?gate_type .
+}

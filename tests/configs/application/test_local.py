@@ -5,9 +5,9 @@ from pydantic import ValidationError
 from src.configs.application.local import LocalConfig
 
 
-def config(reports, mappings=None):
+def config(reports, mappings=None, system=None):
     return {
-        "system": {"db_path": "db.sqlite3"},
+        "system": system or {"kb_dir": "data/kb"},
         "ingestion": {"mappings": mappings or {"locust": "locust.yaml"}},
         "data": {"reports": reports},
     }
@@ -29,6 +29,20 @@ class LocalConfigTests(unittest.TestCase):
             LocalConfig.model_validate(
                 config([{"path": "report.html", "source": "mocha"}])
             )
+
+    def test_store_defaults_to_knowledge_base(self):
+        local = LocalConfig.model_validate(config([]))
+        self.assertEqual(local.system.store, "knowledge_base")
+
+    def test_selected_store_requires_its_path(self):
+        with self.assertRaisesRegex(ValidationError, "requires system.db_path"):
+            LocalConfig.model_validate(
+                config([], system={"store": "sqlite", "kb_dir": "data/kb"})
+            )
+        local = LocalConfig.model_validate(
+            config([], system={"store": "sqlite", "db_path": "x.sqlite3"})
+        )
+        self.assertEqual(str(local.system.db_path), "x.sqlite3")
 
 
 if __name__ == "__main__":
