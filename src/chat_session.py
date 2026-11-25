@@ -23,6 +23,9 @@ LLM_CONFIG_PATH = Path("configs/llm/openrouter.yaml")
 LOCAL_CONFIG_PATH = Path("configs/application/local.yaml")
 PERFORMANCE_CONFIG_PATH = Path("configs/gates/performance/performance_gate.yaml")
 
+# Sections of performance_gate.yaml
+CHAT_TARGETS_SECTION = "metrics"
+EVAL_TARGETS_SECTION = "metrics_evaluation"
 
 @dataclass(frozen=True)
 class ChatSession:
@@ -31,6 +34,20 @@ class ChatSession:
     graph: CompiledStateGraph
     system_prompt: str
     trace_metadata: dict[str, str]
+
+def build_eval_session(db_path: Path) -> ChatSession:
+    """Evaluation session: reports from `evaluation.reports`, targets from the evaluation gate file.
+
+    `db_path` must NOT be the production database: the evaluation reports would mix with real
+    ones, and "current report" is the newest report in the database. Use a fresh/temporary file.
+    """
+    local_config = load_local_config(LOCAL_CONFIG_PATH)
+    return _build_session(
+        db_path=db_path,
+        reports=_evaluation_reports(),
+        mappings=local_config.ingestion.mappings,
+        targets_section=EVAL_TARGETS_SECTION,
+    )
 
 
 def build_chat_session() -> ChatSession:

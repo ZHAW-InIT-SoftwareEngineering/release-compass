@@ -9,3 +9,10 @@ data:
   reports:
     - path: data/raw/reports/example_reports/loctus/loctus_performance_report.html
       source: locust
+
+evaluation:
+  reports:
+    - path: data/eval_data/Locust/Locust_TeaStore_Report_Original.html
+      source: locust
+    - path: data/eval_data/Locust/Locust_TeaStore_Report_1sDelay_AddShopCart.html
+      source: locust

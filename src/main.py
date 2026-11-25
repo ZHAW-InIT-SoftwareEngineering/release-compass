@@ -1,23 +1,35 @@
+import argparse
+import tempfile
 from pathlib import Path
 from uuid import uuid4
 
-from src.chat_session import build_chat_session
+from src.chat_session import build_chat_session, build_eval_session
 from src.configs.trace.trace_config import load_trace_config
 from src.harness.conversation import ApprovalRequest, Conversation
 from src.harness.interrupt_handler import InterruptHandler
 from src.harness.trace.phoenix import phoenix_server
 from src.harness.trace.trace import tracing
+from src.evaluation.conversation_asker import ConversationAsker
+from src.evaluation.generate import generate_answers
 
 TRACE_CONFIG_PATH = Path("configs/trace/trace.yaml")
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--eval", action="store_true", help="Run evaluation instead of chat")
+    args = parser.parse_args()
+    
     trace_config = load_trace_config(TRACE_CONFIG_PATH)
     with phoenix_server(trace_config), tracing(trace_config):
-        _run()
+        _run(args)
 
 
-def _run() -> None:
+def _run(args: argparse.Namespace) -> None:
+    if args.eval:
+        _run_evaluation(args)
+        return
+
     session = build_chat_session()
     run_chat(
         Conversation(
@@ -27,6 +39,17 @@ def _run() -> None:
             trace_metadata=session.trace_metadata,
         )
     )
+
+def _run_evaluation(args: argparse.Namespace) -> None:
+    # Stage 1: fresh database per run, so only the evaluation reports exist.
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
+        session = build_eval_session(Path(tmp) / "eval.sqlite3")
+        generate_answers(
+            ConversationAsker(session, approve=args.approve),
+            cases_path=args.cases,
+            answers_path=args.answers,
+        )
+
 
 
 def run_chat(conversation: Conversation) -> None:

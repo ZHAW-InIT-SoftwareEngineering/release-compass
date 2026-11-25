@@ -1,0 +1,6 @@
+rouge-score
+sentence-transformers
+transformers
+torch
+pandas
+openpyxl
