@@ -34,6 +34,16 @@ class LocalConfigTests(unittest.TestCase):
         local = LocalConfig.model_validate(config([]))
         self.assertEqual(local.system.store, "knowledge_base")
 
+    def test_llm_defaults_to_openrouter(self):
+        local = LocalConfig.model_validate(config([]))
+        self.assertEqual(str(local.system.llm), "configs/llm/openrouter.yaml")
+
+    def test_accepts_selected_llm_config(self):
+        local = LocalConfig.model_validate(
+            config([], system={"kb_dir": "data/kb", "llm": "configs/llm/sglang.yaml"})
+        )
+        self.assertEqual(str(local.system.llm), "configs/llm/sglang.yaml")
+
     def test_selected_store_requires_its_path(self):
         with self.assertRaisesRegex(ValidationError, "requires system.db_path"):
             LocalConfig.model_validate(

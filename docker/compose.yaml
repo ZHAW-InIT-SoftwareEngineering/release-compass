@@ -3,6 +3,14 @@
 # Traces: http://localhost:6006
 # Stop Phoenix afterwards:
 #   docker compose -f docker/compose.yaml down
+#
+# Self-hosted LLM on an NVIDIA GPU (ADR 0016); set system.llm to
+# configs/llm/sglang.yaml in configs/application/local.yaml first:
+#   docker compose -f docker/compose.yaml build
+#   docker compose -f docker/compose.yaml --profile sglang up -d sglang
+#   docker compose -f docker/compose.yaml --profile sglang run --rm agent
+# Stop it afterwards:
+#   docker compose -f docker/compose.yaml --profile sglang down
 
 name: release-compass
 
@@ -14,7 +22,12 @@ services:
     stdin_open: true
     tty: true
     depends_on:
-      - phoenix
+      phoenix:
+        condition: service_started
+      sglang:
+        condition: service_healthy
+        # Only waited for when the sglang profile is active.
+        required: false
     volumes:
       - ../.env:/app/.env:ro
       - ../data:/app/data
@@ -24,3 +37,47 @@ services:
     image: arizephoenix/phoenix:version-20.23.0
     ports:
       - "6006:6006"
+
+  sglang:
+    image: lmsysorg/sglang:v0.5.23-runtime
+    profiles: [sglang]
+    env_file: ../.env
+    ipc: host
+    ports:
+      - "30000:30000"
+    volumes:
+      - huggingface:/root/.cache/huggingface
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    # --model-path must match model_name in configs/llm/sglang.yaml.
+    # --tool-call-parser must match the model family (qwen for Qwen2.5):
+    # https://docs.sglang.io/advanced_features/tool_parser.html
+    # Sized for a 10 GB RTX 3080: 4-bit AWQ weights and a 16k context.
+    command:
+      - sh
+      - -c
+      - >-
+        python3 -m sglang.launch_server
+        --model-path Qwen/Qwen2.5-7B-Instruct-AWQ
+        --tool-call-parser qwen
+        --context-length 16384
+        --mem-fraction-static 0.85
+        --host 0.0.0.0 --port 30000
+        --api-key "$$SGLANG_API_KEY"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'curl -fs -H "Authorization: Bearer $$SGLANG_API_KEY" http://localhost:30000/health'
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      # The first start downloads the model weights.
+      start_period: 15m
+
+volumes:
+  huggingface:

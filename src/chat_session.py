@@ -32,7 +32,6 @@ from src.harness.tools.report_tools import build_tools
 from src.llm.llm import init_llm
 
 CICD_CONFIG_PATH = Path("configs/cicd/github_dispatch.yaml")
-LLM_CONFIG_PATH = Path("configs/llm/openrouter.yaml")
 LOCAL_CONFIG_PATH = Path("configs/application/local.yaml")
 PERFORMANCE_CONFIG_PATH = Path("configs/gates/performance/performance_gate.yaml")
 
@@ -121,7 +120,9 @@ def build_chat_session() -> ChatSession:
     # A missing token only fails the CI/CD call, so report questions still work.
     dispatch = GitHubDispatch(cicd_config, read_env_file(cicd_config.token_env))
     tools = [*build_tools(questions), build_cicd_tool(dispatch, deployment_payload)]
-    model_with_tools = init_llm(load_llm_config(LLM_CONFIG_PATH)).bind_tools(tools)
+    model_with_tools = init_llm(load_llm_config(local_config.system.llm)).bind_tools(
+        tools
+    )
 
     # One checkpointer for the process; conversations are separated by thread_id.
     graph = build_graph(model_with_tools, tools, MemorySaver(), current_outcome)

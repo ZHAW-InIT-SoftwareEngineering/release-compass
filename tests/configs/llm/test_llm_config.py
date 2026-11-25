@@ -26,6 +26,11 @@ class LLMConfigTokenCapTests(unittest.TestCase):
         config = load_llm_config(Path("configs/llm/openrouter.yaml"))
         self.assertEqual(config.max_completion_tokens, 8000)
 
+    def test_sglang_config_loads(self):
+        config = load_llm_config(Path("configs/llm/sglang.yaml"))
+        self.assertEqual(config.api_key_env, "SGLANG_API_KEY")
+        self.assertEqual(str(config.base_url), "http://sglang:30000/v1")
+
 
 if __name__ == "__main__":
     unittest.main()

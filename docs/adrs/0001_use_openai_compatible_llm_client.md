@@ -8,7 +8,7 @@ Accepted
 
 ## Context
 
-The application must support OpenRouter-hosted models and self-hosted models. Both OpenRouter and vLLM expose OpenAI-compatible APIs.
+The application must support OpenRouter-hosted models and self-hosted models. Both OpenRouter and self-hosted servers such as SGLang (ADR 0016) or vLLM expose OpenAI-compatible APIs.
 
 ## Decision
 

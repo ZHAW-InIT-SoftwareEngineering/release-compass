@@ -3,6 +3,8 @@ system:
   store: knowledge_base
   kb_dir: data/kb
   db_path: data/database/release_compass.sqlite3
+  # llm: configs/llm/sglang.yaml  # self-hosted on an NVIDIA GPU
+  llm: configs/llm/openrouter.yaml
 
 ingestion:
   mappings:

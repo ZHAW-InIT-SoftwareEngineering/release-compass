@@ -11,6 +11,8 @@ class SystemConfig(BaseModel):
     # Folder of the knowledge base Turtle files, e.g. facts.ttl.
     kb_dir: Path | None = None
     db_path: Path | None = None
+    # LLM endpoint config: OpenRouter by default, SGLang when self-hosted (ADR 0016).
+    llm: Path = Path("configs/llm/openrouter.yaml")
 
     @model_validator(mode="after")
     def _check_store_path(self):
