@@ -28,12 +28,10 @@ from src.harness.tools.report_tools import build_tools
 from src.llm.llm import init_llm
 
 LLM_CONFIG_PATH = Path("configs/llm/openrouter.yaml")
-LOCAL_CONFIG_PATH = Path("configs/application/local.yaml")
-PERFORMANCE_CONFIG_PATH = Path("configs/gates/performance/performance_gate.yaml")
+PERFORMANCE_CONFIG_PATH = Path("configs/gates/performance/performance_gate.yaml") # Change this to a argment in the future
 
 # Sections of performance_gate.yaml
 CHAT_TARGETS_SECTION = "metrics"
-EVAL_TARGETS_SECTION = "metrics_evaluation"
 
 @dataclass(frozen=True)
 class ChatSession:
@@ -42,20 +40,6 @@ class ChatSession:
     graph: CompiledStateGraph
     system_prompt: str
     trace_metadata: dict[str, str]
-
-def build_eval_session(db_path: Path) -> ChatSession:
-    """Evaluation session: reports from `evaluation.reports`, targets from the evaluation gate file.
-
-    `db_path` must NOT be the production database: the evaluation reports would mix with real
-    ones, and "current report" is the newest report in the database. Use a fresh/temporary file.
-    """
-    local_config = load_local_config(LOCAL_CONFIG_PATH)
-    return _build_session(
-        db_path=db_path,
-        reports=_evaluation_reports(),
-        mappings=local_config.ingestion.mappings,
-        targets_section=EVAL_TARGETS_SECTION,
-    )
 
 
 class Store(ReportRepository, ReportQuestions, Protocol):
@@ -83,10 +67,11 @@ def _open_sqlite(system: SystemConfig) -> SQLiteDB:
     return SQLiteDB(system.db_path)
 
 
-def build_chat_session() -> ChatSession:
+def build_chat_session(config_path: Path) -> ChatSession:
     """Import and assess reports, then wire the LLM, tools and graph."""
-    local_config = load_local_config(LOCAL_CONFIG_PATH)
+    local_config = load_local_config(config_path)
     repository = open_repository(local_config.system)
+
     reports = import_reports(
         [
             ReportInput(
@@ -105,34 +90,64 @@ def build_chat_session() -> ChatSession:
         ),
         repository,
     )
+
+    return _build_session(
+        repository=repository,
+        reports=reports,
+        targets_section=CHAT_TARGETS_SECTION,
+        store_name=local_config.system.store,
+    )
+
+
+def _build_session(
+    repository: Store,
+    reports,
+    targets_section: str,
+    store_name: str,
+) -> ChatSession:
+    """Wire the assessment, tools, LLM and graph for a set of reports."""
     if not reports:
-        raise ValueError("At least one stored report is required for chat")
+        raise ValueError("At least one stored report is required")
+
     current_report = max(reports, key=report_order)
+
     assessment = build_performance_assessment_service(
-        repository, YamlTargetSource(PERFORMANCE_CONFIG_PATH).targets()
+        repository,
+        YamlTargetSource(
+            PERFORMANCE_CONFIG_PATH,
+            section=targets_section,
+        ).targets(),
     )
 
     assessment.prepare()
     questions = ReportQuestionService(repository, assessment.gates)
 
     tools = build_tools(questions)
-    model_with_tools = init_llm(load_llm_config(LLM_CONFIG_PATH)).bind_tools(tools)
+    model_with_tools = init_llm(
+        load_llm_config(LLM_CONFIG_PATH)
+    ).bind_tools(tools)
 
     def current_outcome() -> Outcome | None:
-        """The current report's outcome; None when it is missing."""
         try:
-            return questions.describe_report(current_report.report_id).outcome
+            return questions.describe_report(
+                current_report.report_id
+            ).outcome
         except ReportNotFoundError:
             return None
 
-    # One checkpointer for the process; conversations are separated by thread_id.
-    graph = build_graph(model_with_tools, tools, MemorySaver(), current_outcome)
+    graph = build_graph(
+        model_with_tools,
+        tools,
+        MemorySaver(),
+        current_outcome,
+    )
+
     return ChatSession(
         graph=graph,
         system_prompt=system_prompt(current_report),
         trace_metadata={
             "current_report_id": str(current_report.report_id),
             "assessment_version": assessment.version,
-            "store": local_config.system.store,
+            "store": store_name,
         },
     )

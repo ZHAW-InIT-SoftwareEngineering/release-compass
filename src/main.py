@@ -3,7 +3,7 @@ import tempfile
 from pathlib import Path
 from uuid import uuid4
 
-from src.chat_session import build_chat_session, build_eval_session
+from src.chat_session import build_chat_session
 from src.configs.trace.trace_config import load_trace_config
 from src.harness.conversation import ApprovalRequest, Conversation
 from src.harness.interrupt_handler import InterruptHandler
@@ -11,6 +11,7 @@ from src.harness.trace.phoenix import phoenix_server
 from src.harness.trace.trace import tracing
 from src.evaluation.conversation_asker import ConversationAsker
 from src.evaluation.generate import generate_answers
+from src.eval_worker import DEFAULT_DATA_DIR, run_eval_worker
 
 TRACE_CONFIG_PATH = Path("configs/trace/trace.yaml")
 
@@ -18,6 +19,10 @@ TRACE_CONFIG_PATH = Path("configs/trace/trace.yaml")
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--eval", action="store_true", help="Run evaluation instead of chat")
+    parser.add_argument("--config", type=Path, default=Path("configs/application/local.yaml"), help="Path to the specific configuration file")
+    parser.add_argument("--eval-data", type=Path, default=DEFAULT_DATA_DIR, help="Path to the evaluation data directory")
+    parser.add_argument("--answers-dir", type=Path, default=Path("answers"), help="Directory to store evaluation answers")
+    parser.add_argument("--approve", action="store_true", help="Automatically approve all interruptions during evaluation" )    
     args = parser.parse_args()
     
     trace_config = load_trace_config(TRACE_CONFIG_PATH)
@@ -30,7 +35,7 @@ def _run(args: argparse.Namespace) -> None:
         _run_evaluation(args)
         return
 
-    session = build_chat_session()
+    session = build_chat_session(args.config)
     run_chat(
         Conversation(
             session.graph,
@@ -41,16 +46,15 @@ def _run(args: argparse.Namespace) -> None:
     )
 
 def _run_evaluation(args: argparse.Namespace) -> None:
-    # Stage 1: fresh database per run, so only the evaluation reports exist.
-    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
-        session = build_eval_session(Path(tmp) / "eval.sqlite3")
-        generate_answers(
-            ConversationAsker(session, approve=args.approve),
-            cases_path=args.cases,
-            answers_path=args.answers,
-        )
-
-
+    # Stage 1: one chat session per scenario folder, opened and closed by the worker.
+    answer_files = run_eval_worker(
+        data_dir=args.eval_data,
+        answers_dir=args.answers_dir,
+        build_session=build_chat_session,
+        approve=args.approve,
+    )
+    # Stage 2: independent of the chatbot; can also be run on its own (see score.py).
+    # Score the answers against the gold answers and generate a report.
 
 def run_chat(conversation: Conversation) -> None:
     """Run the terminal conversation, asking for approvals whenever the graph pauses."""

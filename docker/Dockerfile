@@ -22,4 +22,4 @@ COPY src ./src
 ENV PATH="/app/.venv/bin:$PATH"
 
 # .env and data/ are mounted at runtime, never baked into the image.
-CMD ["python", "-m", "src.main"]
+ENTRYPOINT ["python", "-m", "src.main"]

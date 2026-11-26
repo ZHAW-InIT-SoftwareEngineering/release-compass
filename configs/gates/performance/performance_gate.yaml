@@ -18,10 +18,3 @@ metrics:
     target: { aggregation: tps, unit: req/s, min: 40, max: null }  # dummy
     score: 0.8  # dummy, adjustable
 
-metrics_evaluation:
-  response_time:
-    target: { aggregation: p90, unit: ms, min: null, max: 1000 }  # dummy
-    score: 0.8
-  request_outcomes:
-    target: { aggregation: failure_rate_percent, unit: "%", min: null, max: 0 }
-    score: 0.8 

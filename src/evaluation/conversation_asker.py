@@ -30,9 +30,15 @@ class ConversationAsker:
     approve=False (default) denies every approval, so evaluation never triggers a real action.
     """
 
-    def __init__(self, session: ChatSession, approve: bool = False) -> None:
+    def __init__(
+        self,
+        session: ChatSession,
+        approve: bool = False,
+        trace_metadata: Mapping[str, Any] | None = None, 
+    ) -> None:
         self._session = session
         self._approve = approve
+        self._trace_metadata = dict(trace_metadata or {})
 
     def __call__(self, question: str, case: Mapping[str, Any]) -> dict[str, Any]:
         thread_id = f"eval-{case['case_id']}-{uuid4().hex[:8]}"

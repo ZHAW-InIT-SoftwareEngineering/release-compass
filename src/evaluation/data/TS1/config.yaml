@@ -1,0 +1,18 @@
+system:
+  # store: knowledge_base  # or sqlite
+  store: knowledge_base
+  kb_dir: data/kb
+  db_path: data/database/release_compass.sqlite3
+
+ingestion:
+  mappings:
+    locust: configs/ingestion/locust.yaml
+
+data:
+  reports:
+    - path: src/evaluation/data/Locust_TeaStore_Report_Original.html
+      source: locust
+    - path: src/evaluation/data/Locust_TeaStore_Report_Original_Noise_1.html
+      source: locust
+
+
