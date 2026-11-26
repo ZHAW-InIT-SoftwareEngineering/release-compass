@@ -1,9 +1,17 @@
 """Stage 1: ask each case's question and store the answer. Resumable.
 
-Appends one JSON line per case to the answers file:
-    {"timestamp", "case_id", "question", "answer", "gold_answer", "requirement_id", "latency_ms"}
-A case_id that is already in the file is skipped; a case whose call fails is NOT written,
-so it is retried on the next run. One answers file = one chatbot version: use a new file
+All answers of all scenarios go into ONE json file with this structure:
+
+    {
+      "summary": null | {...},      # written by score.py; reset to null whenever a new case is added
+      "cases": [
+        {"timestamp", "scenario", "case_id", "question", "answer", "gold_answer",
+         "tags", "requirement_id", "latency_ms", "scoring"?}   # "scoring" is added by score.py
+      ]
+    }
+
+A (scenario, case_id) pair that is already in the file is skipped; a case whose call fails is NOT
+written, so it is retried on the next run. One answers file = one chatbot version: use a new file
 to evaluate a new release (otherwise every case would be skipped).
 """
 import json
@@ -27,40 +35,59 @@ def load_cases(path: Path) -> list[dict[str, Any]]:
     return cases
 
 
+def load_answers(path: Path) -> dict[str, Any]:
+    """Read the answers file; a missing or empty file gives an empty structure."""
+    path = Path(path)
+    if not path.exists():
+        return {"summary": None, "cases": []}
+    text = path.read_text(encoding="utf-8")
+    if not text.strip():
+        return {"summary": None, "cases": []}
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError as error:
+        raise ValueError(
+            f"{path} is not a valid answers file (an old .jsonl file? delete it or use a new --output): {error}"
+        ) from error
+    if not isinstance(data, dict) or "cases" not in data:
+        raise ValueError(f"{path} has an unexpected structure: expected an object with a 'cases' list")
+    data.setdefault("summary", None)
+    return data
+
+
+def save_answers(path: Path, data: Mapping[str, Any]) -> None:
+    """Write atomically, so a crash cannot leave a half-written file."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp.replace(path)
+
+
 def stored_case_ids(answers_path: Path, scenario: str | None = None) -> set[str]:
-    ids: set[str] = set()
-    if not answers_path.exists():
-        return ids
-    for number, line in enumerate(answers_path.read_text(encoding="utf-8").splitlines(), 1):
-        if not line.strip():
-            continue
-        try:
-            record = json.loads(line)
-            if scenario is None or record.get("scenario") == scenario:
-                ids.add(record["case_id"])
-        except (json.JSONDecodeError, KeyError):
-            print(f"WARNING {answers_path}:{number} is not a valid record, ignored")
-    return ids
+    """case_ids already answered (for one scenario, or for all if scenario is None)."""
+    return {
+        c["case_id"]
+        for c in load_answers(answers_path)["cases"]
+        if scenario is None or c.get("scenario") == scenario
+    }
 
 
-def _ensure_trailing_newline(path: Path) -> None:
-    """Guard against a half-written last line (e.g. crash) gluing onto the next record."""
-    if path.exists() and path.stat().st_size:
-        with path.open("rb") as f:
-            f.seek(-1, 2)
-            if f.read(1) != b"\n":
-                with path.open("ab") as g:
-                    g.write(b"\n")
-
-
-def generate_answers(ask: Ask, *, cases_path: Path, answers_path: Path,
-                     scenario: str | None = None) -> tuple[int, int, int]:
+def generate_answers(
+    ask: Ask,
+    *,
+    cases_path: Path,
+    answers_path: Path,
+    scenario: str | None = None,
+) -> tuple[int, int, int]:
     """Returns (written, skipped, failed)."""
     cases = load_cases(cases_path)
     answers_path = Path(answers_path)
-    answers_path.parent.mkdir(parents=True, exist_ok=True)
-    _ensure_trailing_newline(answers_path)
-    done = stored_case_ids(answers_path, scenario)
+    data = load_answers(answers_path)
+    done = {
+        c["case_id"] for c in data["cases"]
+        if scenario is None or c.get("scenario") == scenario
+    }
 
     written = skipped = failed = 0
     for case in cases:
@@ -88,11 +115,13 @@ def generate_answers(ask: Ask, *, cases_path: Path, answers_path: Path,
             "question": case["question"],
             "answer": answer,
             "gold_answer": case["gold_answer"],
+            "tags": case.get("tags", []),
             "requirement_id": case.get("requirement_id"),
             "latency_ms": round(latency_ms, 1),
         }
-        with answers_path.open("a", encoding="utf-8") as f:
-            f.write(json.dumps(record, ensure_ascii=False) + "\n")
+        data["cases"].append(record)
+        data["summary"] = None  # a new case makes the aggregate outdated until it is re-scored
+        save_answers(answers_path, data)
         written += 1
         print(f"{case_id}  answered in {latency_ms:.0f} ms")
 

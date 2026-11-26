@@ -20,6 +20,20 @@ services:
       - ../data:/app/data
       - ./trace.yaml:/app/configs/trace/trace.yaml:ro
       - ../answers:/app/answers  
+  
+  agent-eval:
+    extends: agent
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        INSTALL_EVAL: "true"
+    depends_on:
+      - phoenix
+    environment:
+      - HF_HOME=/app/.cache/huggingface
+    volumes:
+      - ../.cache/huggingface:/app/.cache/huggingface
 
   phoenix:
     image: arizephoenix/phoenix:version-20.23.0

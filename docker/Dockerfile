@@ -14,7 +14,12 @@ WORKDIR /app
 
 # Install locked dependencies first so code changes reuse this layer.
 COPY pyproject.toml uv.lock .python-version ./
-RUN uv sync --frozen --no-install-project
+ARG INSTALL_EVAL=false
+RUN if [ "$INSTALL_EVAL" = "true" ]; then \
+      uv sync --frozen --no-install-project --extra eval; \
+    else \
+      uv sync --frozen --no-install-project; \
+    fi
 
 COPY configs ./configs
 COPY src ./src

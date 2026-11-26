@@ -1,0 +1,91 @@
+{
+  "summary": {
+    "n_cases": 3,
+    "n_scored": 3,
+    "scored_at": "2026-11-26T13:55:23.623217+00:00",
+    "metrics": {
+      "rouge1_f1": 0.1821745647411507,
+      "rouge2_f1": 0.037172902910247003,
+      "rougeL_f1": 0.14032053499365849,
+      "cosine": 0.34544676542282104,
+      "nli_entailment": 0.25595065801947686,
+      "nli_contradiction": 0.0005657907798498248,
+      "nli_neutral": 0.7434835433959961,
+      "numeric_recall": 0.0
+    },
+    "mean_latency_ms": 8584.733333333332
+  },
+  "cases": [
+    {
+      "timestamp": "2026-11-26T13:22:35.623375+00:00",
+      "scenario": "TS1",
+      "case_id": "TC-001",
+      "question": "Is the current throughput of the system sufficient for staging?",
+      "answer": "Yes. The current report's performance gate shows throughput is sufficient for staging:\n\n- **Metric:** throughput (tps)\n- **Target:** minimum 40 req/s\n- **Measured score:** 1.0 (100% of sources meet target)\n- **Outcome:** pass\n\nThe overall report outcome is also **pass**, so the system meets the evaluated performance criteria for staging.\n\nDeployment approval is available if you'd like to proceed. Let me know when you're ready and I can start the CI/CD deployment workflow.",
+      "gold_answer": "Yes, the current throughput of the system is 100 requests per second, which is sufficient based on the minimum requirement of 80 requests per second. The system is performing well under the current load and can handle the expected traffic without any issues.",
+      "tags": [
+        "staging_advice",
+        "throughput"
+      ],
+      "requirement_id": null,
+      "latency_ms": 6794.0,
+      "scoring": {
+        "rouge1_f1": 0.32203389830508483,
+        "rouge2_f1": 0.06896551724137931,
+        "rougeL_f1": 0.23728813559322035,
+        "cosine": 0.39148443937301636,
+        "nli_entailment": 0.0021727054845541716,
+        "nli_contradiction": 4.976757554686628e-05,
+        "nli_neutral": 0.99777752161026,
+        "numeric_recall": 0.0
+      }
+    },
+    {
+      "timestamp": "2026-11-26T13:22:41.167672+00:00",
+      "scenario": "TS1",
+      "case_id": "TC-002",
+      "question": "Can we stage at this point?",
+      "answer": "Yes, we can stage at this point. The current report shows a **pass** outcome with all performance gates meeting their targets:\n\n*   **request_outcomes**: Pass\n*   **response_time (p90)**: Pass\n*   **throughput (tps)**: Pass\n\nAll required gates have been cleared.",
+      "gold_answer": "Yes, the system has been stable and tested under the current load.",
+      "tags": [
+        "report_comparison",
+        "staging_advice"
+      ],
+      "requirement_id": null,
+      "latency_ms": 5531.9,
+      "scoring": {
+        "rouge1_f1": 0.163265306122449,
+        "rouge2_f1": 0.0425531914893617,
+        "rougeL_f1": 0.12244897959183675,
+        "cosine": 0.3064734935760498,
+        "nli_entailment": 0.7651786208152771,
+        "nli_contradiction": 6.074914199416526e-05,
+        "nli_neutral": 0.23476064205169678,
+        "numeric_recall": null
+      }
+    },
+    {
+      "timestamp": "2026-11-26T13:22:54.611852+00:00",
+      "scenario": "TS1",
+      "case_id": "TC-003",
+      "question": "What changed between last and this report?",
+      "answer": "Between the previous report (6221adee...) and the current one (2a250adc...), the main change was an update to the source data:\n\n*   **Source File:** The ingestion path changed from `Locust_TeaStore_Report_Original.html` to `Locust_TeaStore_Report_Original_Noise_1.html`.\n*   **Structure:** This is no longer a root report; it is now part of a sequence (ingestion sequence 2) under report 6221adee..., whereas the previous one was the root.\n*   **Generation Time:** The current report was generated later, at 10:33:37 UTC on Nov 10th, compared to 10:02:29 UTC.",
+      "gold_answer": "Nothing changed. The system is performing as expected.",
+      "tags": [
+        "report_comparison"
+      ],
+      "requirement_id": null,
+      "latency_ms": 13428.3,
+      "scoring": {
+        "rouge1_f1": 0.06122448979591837,
+        "rouge2_f1": 0.0,
+        "rougeL_f1": 0.06122448979591837,
+        "cosine": 0.338382363319397,
+        "nli_entailment": 0.0005006477585993707,
+        "nli_contradiction": 0.0015868556220084429,
+        "nli_neutral": 0.9979124665260315,
+        "numeric_recall": null
+      }
+    }
+  ]
+}

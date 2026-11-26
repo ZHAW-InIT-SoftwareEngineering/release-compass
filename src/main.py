@@ -22,7 +22,8 @@ def main() -> None:
     parser.add_argument("--config", type=Path, default=Path("configs/application/local.yaml"), help="Path to the specific configuration file")
     parser.add_argument("--eval-data", type=Path, default=DEFAULT_DATA_DIR, help="Path to the evaluation data directory")
     parser.add_argument("--output", type=Path, default=None, help="Answers file (default: answers/eval_answers.jsonl)")
-    parser.add_argument("--approve", action="store_true", help="Automatically approve all interruptions during evaluation" )    
+    parser.add_argument("--approve", action="store_true", help="Automatically approve all interruptions during evaluation" )   
+    parser.add_argument("--score", action="store_true", help="Score the answers after evaluation (requires --eval)") 
     args = parser.parse_args()
     
     trace_config = load_trace_config(TRACE_CONFIG_PATH)
@@ -55,6 +56,9 @@ def _run_evaluation(args: argparse.Namespace) -> None:
     print(f"Answers written to {output_file.resolve()}")
 
     # start the scoring part
+    if args.score:
+        from src.evaluation.score import score_file
+        score_file(output_file, scorer="models", force=False)
 
 def run_chat(conversation: Conversation) -> None:
     """Run the terminal conversation, asking for approvals whenever the graph pauses."""

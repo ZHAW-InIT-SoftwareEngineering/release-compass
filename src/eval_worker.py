@@ -8,7 +8,7 @@ Layout of the data directory (default: src/evaluation/data):
 Folders starting with "_" or "." are ignored (e.g. the _example folder).
 For each scenario the worker opens a chat session from its config, asks every pending case in its
 own conversation thread, closes the session and moves on to the next folder.
-Answers go to one shared file (default answers/eval_answers.jsonl), resumable per scenario and case.
+Answers go to one shared file (default answers/eval_answers.json), resumable per scenario and case.
 """
 from __future__ import annotations
 
@@ -19,6 +19,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
+from src.evaluation.generate import generate_answers, load_cases, save_answers, stored_case_ids
 
 import yaml
 
@@ -31,7 +32,7 @@ if TYPE_CHECKING:
 CONFIG_FILE = "config.yaml"
 CASES_FILE = "cases.jsonl"
 DEFAULT_DATA_DIR = Path(__file__).parent / "evaluation" / "data"
-DEFAULT_ANSWERS_PATH = Path("answers") / "eval_answers.jsonl"
+DEFAULT_ANSWERS_PATH = Path("answers") / "eval_answers.json"
 
 BuildSession = Callable[[Path], "ChatSession"]
 
@@ -103,7 +104,8 @@ def run_eval_worker(
 
     output_path = Path(output_path) if output_path else DEFAULT_ANSWERS_PATH
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.touch(exist_ok=True)  # the file exists even if every case fails
+    if not output_path.exists():
+        save_answers(output_path, {"summary": None, "cases": []})  # the file exists even if every case fails
     failed: list[str] = []
 
     for scenario in scenarios:
