@@ -27,7 +27,7 @@ def load_cases(path: Path) -> list[dict[str, Any]]:
     return cases
 
 
-def stored_case_ids(answers_path: Path) -> set[str]:
+def stored_case_ids(answers_path: Path, scenario: str | None = None) -> set[str]:
     ids: set[str] = set()
     if not answers_path.exists():
         return ids
@@ -35,7 +35,9 @@ def stored_case_ids(answers_path: Path) -> set[str]:
         if not line.strip():
             continue
         try:
-            ids.add(json.loads(line)["case_id"])
+            record = json.loads(line)
+            if scenario is None or record.get("scenario") == scenario:
+                ids.add(record["case_id"])
         except (json.JSONDecodeError, KeyError):
             print(f"WARNING {answers_path}:{number} is not a valid record, ignored")
     return ids
@@ -51,13 +53,14 @@ def _ensure_trailing_newline(path: Path) -> None:
                     g.write(b"\n")
 
 
-def generate_answers(ask: Ask, *, cases_path: Path, answers_path: Path) -> tuple[int, int, int]:
+def generate_answers(ask: Ask, *, cases_path: Path, answers_path: Path,
+                     scenario: str | None = None) -> tuple[int, int, int]:
     """Returns (written, skipped, failed)."""
     cases = load_cases(cases_path)
     answers_path = Path(answers_path)
     answers_path.parent.mkdir(parents=True, exist_ok=True)
     _ensure_trailing_newline(answers_path)
-    done = stored_case_ids(answers_path)
+    done = stored_case_ids(answers_path, scenario)
 
     written = skipped = failed = 0
     for case in cases:
@@ -80,6 +83,7 @@ def generate_answers(ask: Ask, *, cases_path: Path, answers_path: Path) -> tuple
 
         record = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
+            "scenario": scenario,
             "case_id": case_id,
             "question": case["question"],
             "answer": answer,

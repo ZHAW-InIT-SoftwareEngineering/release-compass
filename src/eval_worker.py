@@ -8,7 +8,7 @@ Layout of the data directory (default: src/evaluation/data):
 Folders starting with "_" or "." are ignored (e.g. the _example folder).
 For each scenario the worker opens a chat session from its config, asks every pending case in its
 own conversation thread, closes the session and moves on to the next folder.
-Answers go to <answers_dir>/<scenario>.jsonl (resumable, see generate.py).
+Answers go to one shared file (default answers/eval_answers.jsonl), resumable per scenario and case.
 """
 from __future__ import annotations
 
@@ -31,6 +31,7 @@ if TYPE_CHECKING:
 CONFIG_FILE = "config.yaml"
 CASES_FILE = "cases.jsonl"
 DEFAULT_DATA_DIR = Path(__file__).parent / "evaluation" / "data"
+DEFAULT_ANSWERS_PATH = Path("answers") / "eval_answers.jsonl"
 
 BuildSession = Callable[[Path], "ChatSession"]
 
@@ -91,24 +92,22 @@ def scenario_session(config_path: Path, build_session: BuildSession) -> Iterator
 def run_eval_worker(
     *,
     data_dir: Path,
-    answers_dir: Path,
+    output_path: Path | None = None,
     build_session: BuildSession,
     approve: bool = False,
-) -> list[Path]:
-    """Generate answers for every scenario. Returns the answers files that exist."""
+) -> Path:
+    """Generate answers for every scenario into ONE answers file and return its path."""
     scenarios = discover_scenarios(data_dir)
-    for scenario in scenarios:  # fail fast (TODO gold answers, duplicate ids) before any LLM call
+    for scenario in scenarios:  # fail fast before any LLM call
         load_cases(scenario.cases_path)
 
-    answers_dir = Path(answers_dir)
-    answers_dir.mkdir(parents=True, exist_ok=True)
-    answer_files: list[Path] = []
+    output_path = Path(output_path) if output_path else DEFAULT_ANSWERS_PATH
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.touch(exist_ok=True)  # the file exists even if every case fails
     failed: list[str] = []
 
     for scenario in scenarios:
-        answers_path = answers_dir / f"{scenario.name}.jsonl"
-        answer_files.append(answers_path)
-        done = stored_case_ids(answers_path)
+        done = stored_case_ids(output_path, scenario.name)
         if all(c["case_id"] in done for c in load_cases(scenario.cases_path)):
             print(f"\n=== Scenario {scenario.name}: all cases already answered, skipped ===")
             continue
@@ -116,18 +115,21 @@ def run_eval_worker(
         print(f"\n=== Scenario {scenario.name} ===")
         try:
             with scenario_session(scenario.config_path, build_session) as session:
-                generate_answers(
+                _, _, n_failed = generate_answers(
                     ConversationAsker(session, approve=approve,
                                       trace_metadata={"eval_scenario": scenario.name}),
                     cases_path=scenario.cases_path,
-                    answers_path=answers_path,
+                    answers_path=output_path,
+                    scenario=scenario.name,
                 )
-        except Exception as error:  # one broken scenario must not stop the others
+                if n_failed:
+                    failed.append(f"{scenario.name} ({n_failed} cases)")
+        except Exception as error:
             failed.append(scenario.name)
             print(f"Scenario {scenario.name} FAILED: {error!r}")
             import traceback
             traceback.print_exc()
 
     if failed:
-        print(f"\nFailed scenarios (rerun to retry): {failed}")
-    return [p for p in answer_files if p.exists()]
+        print(f"\nFailed (rerun to retry): {failed}")
+    return output_path

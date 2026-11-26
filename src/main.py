@@ -21,7 +21,7 @@ def main() -> None:
     parser.add_argument("--eval", action="store_true", help="Run evaluation instead of chat")
     parser.add_argument("--config", type=Path, default=Path("configs/application/local.yaml"), help="Path to the specific configuration file")
     parser.add_argument("--eval-data", type=Path, default=DEFAULT_DATA_DIR, help="Path to the evaluation data directory")
-    parser.add_argument("--answers-dir", type=Path, default=Path("answers"), help="Directory to store evaluation answers")
+    parser.add_argument("--output", type=Path, default=None, help="Answers file (default: answers/eval_answers.jsonl)")
     parser.add_argument("--approve", action="store_true", help="Automatically approve all interruptions during evaluation" )    
     args = parser.parse_args()
     
@@ -46,15 +46,15 @@ def _run(args: argparse.Namespace) -> None:
     )
 
 def _run_evaluation(args: argparse.Namespace) -> None:
-    # Stage 1: one chat session per scenario folder, opened and closed by the worker.
-    answer_files = run_eval_worker(
+    output_file = run_eval_worker(
         data_dir=args.eval_data,
-        answers_dir=args.answers_dir,
+        output_path=args.output,
         build_session=build_chat_session,
         approve=args.approve,
     )
-    # Stage 2: independent of the chatbot; can also be run on its own (see score.py).
-    # Score the answers against the gold answers and generate a report.
+    print(f"Answers written to {output_file.resolve()}")
+
+    # start the scoring part
 
 def run_chat(conversation: Conversation) -> None:
     """Run the terminal conversation, asking for approvals whenever the graph pauses."""
